@@ -1,0 +1,4 @@
+import(methods)
+import(methylumi)
+import(matrixStats)
+exportPattern("^[[:alpha:]]+")
