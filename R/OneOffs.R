@@ -1,11 +1,11 @@
 ## Various functions to build TCGA packages and such
-loadOneOff <- function(mapping, label, platform='HumanMethylation450', path='/auto/uec-02/shared/production/methylation') {
+loadOneOff <- function(mapping, label, platform='HumanMethylation450', path='/auto/uec-02/shared/production/methylation', project='tcga') {
   # {{{
   require(methylumi)
   platform.path = paste(path, 
                         ifelse(grepl('HumanMethylation450',platform,ignore=T),
                                'meth450k', 'meth27k'), 'raw', sep='/')
-  oneoff.dir = paste(platform.path, label, sep='/')
+  oneoff.dir = paste(gsub('raw', 'processed', platform.path), project, label, sep='/')
   save.dir = gsub('raw', 'MethyLumiSets', platform.path) 
   dir.create(oneoff.dir)
   stopifnot('barcode' %in% names(mapping))
