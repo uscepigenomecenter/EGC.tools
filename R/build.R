@@ -173,44 +173,34 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
     stopifnot(length(batchname)==1)
     subjects = sampleNames(x)[ which(x$BATCH.ID == batch.id) ]
 
+    write.level2 <- function(s) { # {{{
+      xs = which(sampleNames(x) == s)
+      message(paste("Writing level 2 data for sample", which(subjects == s),
+                    "of", length(subjects), "in TCGA batch", batchname))
+      lvl2data = data.frame( M=methylated(x)[,xs], U=unmethylated(x)[,xs] )
+      rownames(lvl2data) = featureNames(x)
+      dump.file = paste(paste(diseasestub,platform,b,'lvl-2',s,'txt',sep='.'))
+      headers1 = paste('Hybridization REF', s, s, sep="\t")
+      headers2 = paste('Composite Element REF', 'Methylated_Intensity', 
+                       'Unmethylated_Intensity', sep="\t")
+      cat(headers1, "\n", sep='', file=dump.file)
+      cat(headers2, "\n", sep='', file=dump.file, append=TRUE)
+      write.table(lvl2data, file=dump.file, append=TRUE, quote=FALSE,
+                            row.names=TRUE, col.names=FALSE, sep="\t")
+      return('done')
+    } # }}}
+
     b = batch.id
     if(parallel) {
       if(!require(parallel)) require(multicore)
-      results <- mclapply(subjects, function(s) { # {{{
-        xs = which(sampleNames(x) == s)
-        message(paste("Writing level 2 data for sample", which(subjects == s),
-                      "of", length(subjects), "in TCGA batch", batchname))
-        lvl2data = data.frame( M=methylated(x)[,xs], U=unmethylated(x)[,xs] )
-        rownames(lvl2data) = featureNames(x)
-        dump.file = paste(paste(diseasestub,platform,b,'lvl-2',s,'txt',sep='.'))
-        headers1 = paste('Hybridization REF', s, s, sep="\t")
-        headers2 = paste('Composite Element REF', 'Methylated_Intensity', 
-                         'Unmethylated_Intensity', sep="\t")
-        cat(headers1, "\n", sep='', file=dump.file)
-        cat(headers2, "\n", sep='', file=dump.file, append=TRUE)
-        write.table(lvl2data, file=dump.file, append=TRUE, quote=FALSE,
-                              row.names=TRUE, col.names=FALSE, sep="\t")
-        return('done')
-      }) # }}}
+      results <- mclapply(subjects, write.level2)
     } else { 
-      for(s in subjects) { # {{{
-        xs = which(sampleNames(x) == s)
-        message(paste("Writing level 2 data for sample", which(subjects == s),
-                      "of", length(subjects), "in TCGA batch", batchname))
-        lvl2data = data.frame( M=methylated(x)[,xs], U=unmethylated(x)[,xs] )
-        rownames(lvl2data) = featureNames(x)
-        dump.file = paste(paste(diseasestub,platform,b,'lvl-2',s,'txt',sep='.'))
-        headers1 = paste('Hybridization REF', s, s, sep="\t")
-        headers2 = paste('Composite Element REF', 'Methylated_Intensity', 
-                         'Unmethylated_Intensity', sep="\t")
-        cat(headers1, "\n", sep='', file=dump.file)
-        cat(headers2, "\n", sep='', file=dump.file, append=TRUE)
-        write.table(lvl2data, file=dump.file, append=TRUE, quote=FALSE,
-                              row.names=TRUE, col.names=FALSE, sep="\t")
-      } # }}}
-    }    
+      results <- lapply(subjects, write.level2)
+    }
+
     gc(,T)
     setwd(oldwd) 
+
   } # }}}
 
   if(3 %in% lvls) { # {{{ level 3: masked beta values and p-values
@@ -227,44 +217,60 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
     }
     betas(x)[ which(fData(x)$SNP10==1), ] = NA
     b = batch.id
-    if(parallel) { 
-      results <- mclapply(subjects, function(s) { # {{{
-        xs = which(sampleNames(x) == s)
-        message(paste("Writing level 3 data for sample", which(subjects == s),
-                      "of", length(subjects), "in TCGA batch", batchname))
-        lvl3data = data.frame( Beta=betas(x)[,xs], Pval=pvals(x)[,xs] )
-        lvl3data[ which(lvl3data$Pval > 0.05), 'Beta' ]  <- NA
-        rownames(lvl3data) = featureNames(x)
-        dump.file = paste(paste(diseasestub,platform,b,'lvl-3',s,'txt',sep='.'))
-        headers1 = paste('Hybridization REF', s, s, sep="\t")
-        headers2=paste('Composite Element REF','Beta_value','Detection_P_value',
-                       sep="\t")
-        cat(headers1, "\n", sep='', file=dump.file)
-        cat(headers2, "\n", sep='', file=dump.file, append=TRUE)
-        write.table(lvl3data, file=dump.file, quote=FALSE, append=TRUE,
-                              row.names=TRUE, col.names=FALSE, sep="\t")
-        return('done')
-      }) # }}}
-    } else { 
-      for(s in subjects) { # {{{
-        xs = which(sampleNames(x) == s)
-        message(paste("Writing level 3 data for sample", which(subjects == s),
-                      "of", length(subjects), "in TCGA batch", batchname))
-        lvl3data = data.frame( Beta=betas(x)[,xs], Pval=pvals(x)[,xs] )
-        lvl3data[ which(lvl3data$Pval > 0.05), 'Beta' ]  <- NA
-        rownames(lvl3data) = featureNames(x)
-        dump.file = paste(paste(diseasestub,platform,b,'lvl-3',s,'txt',sep='.'))
-        headers1 = paste('Hybridization REF', s, s, sep="\t")
-        headers2=paste('Composite Element REF','Beta_value','Detection_P_value',
-                       sep="\t")
-        cat(headers1, "\n", sep='', file=dump.file)
-        cat(headers2, "\n", sep='', file=dump.file, append=TRUE)
-        write.table(lvl3data, file=dump.file, quote=FALSE, append=TRUE,
-                              row.names=TRUE, col.names=FALSE, sep="\t")
-      } # }}}
+
+    # ugly nasty kludge for DCC fiddling
+    if( platform == 'HumanMethylation450' ) { 
+      l3headers = c(rows='Composite Element REF', # {{{
+                    Beta='Beta_value',
+                    Pval='Detection_P_value',
+                    Chrom='Chromosome',
+                    Coord='Genomic_Coordinate') # }}}
+    } else if( platform == 'HumanMethylation27') {
+      l3headers = c(rows='Composite Element REF', # {{{
+                    Beta='Beta_value',
+                    Symbol='Gene_Symbol',
+                    Chrom='Chromosome',
+                    Coord='Genomic_Coordinate') # }}}
     }
+
+    # reduce code duplication between serial & parallel 
+    write.level3 <- function(s) { # {{{
+      xs = which(sampleNames(x) == s)
+      message(paste("Writing level 3 data for sample", which(subjects == s),
+                    "of", length(subjects), "in TCGA batch", batchname))
+
+      ## Level 3, 27k: masked betas, symbols, chr.hg18, site.hg18
+      ## Level 3, 450k: masked betas, pvals, chr.hg18, site.hg18
+      for( fvar in c('SYMBOL','CHR36','CPG36') ) { # for DCC use
+        if( !(fvar %in% fvarLabels(x)) ) fData(x)[ , fvar ] = NA
+      }
+      lvl3data = data.frame( Beta=betas(x)[,xs], 
+                             Pval=pvals(x)[,xs],            # dropped if 27k
+                             Symbol=fData(x)[,'SYMBOL'],    # dropped if 450k
+                             Chrom=fData(x)[,'CHR36'],      # must be hg18  
+                             Coord=fData(x)[,'CPG36'] )     # must be hg18 
+      lvl3data[ which(lvl3data$Pval > 0.05), 'Beta' ] <- NA # mask SNP/RPT too
+      rownames(lvl3data) = featureNames(x)
+      dump.file = paste(paste(diseasestub,platform,b,'lvl-3',s,'txt',sep='.'))
+      headers1 = paste('Hybridization REF', s, s, sep="\t")
+      headers2 = paste(l3headers, collapse="\t")
+      cat(headers1, "\n", sep='', file=dump.file)
+      cat(headers2, "\n", sep='', file=dump.file, append=TRUE)
+      write.table(lvl3data[ , names(l3headers)[-1] ], # kludge
+                  file=dump.file, quote=FALSE, append=TRUE,
+                  row.names=TRUE, col.names=FALSE, sep="\t")
+      return('done')
+    } # }}}
+
+    if(parallel) { 
+      results <- mclapply(subjects, write.level3)
+    } else { 
+      results <- lapply(subjects, write.level3)
+    }
+
     gc(,T)
     setwd(oldwd) 
+
   } # }}}
 
   message(paste(paste("Finished writing batch", batch.id, "level"), lvls))
@@ -291,8 +297,15 @@ buildArchive<-function(map,version='0',base=NULL,platform='HumanMethylation450',
   message('Creating archive directories...')
   dirs = makeArchiveDirs(map, version=version, base=base, platform=platform)
   message('Writing level 2 and level 3 data...')
-  if(METHYLUMISET==TRUE) for(b in bs) writeBatch(x,b,version=version,lvls=lvls)
-  else for(b in bs) runBatchByID(map,b,base=base,platform=platform)
+  if(METHYLUMISET==TRUE) {
+    for(b in bs) {
+      writeBatch(x, b, version=version, lvls=lvls)
+    }
+  } else {
+    for(b in bs) {
+      runBatchByID(map,b,base=base,platform=platform)
+    }
+  }
   message('Writing mage-tab IDF and SDRF files...')
   mageTab(map, version=version, base=base, platform=platform)
   message('Writing checksums for each directory...')

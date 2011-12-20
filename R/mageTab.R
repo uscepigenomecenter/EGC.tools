@@ -10,7 +10,7 @@ buildIDF <- function(x, version='0', platform='HumanMethylation450')
                sep='')
   sdrfnm=gsub('idf','sdrf',filenm)
 
-  invtitle = paste('TCGA Analysis of DNA Methylation for', disease, 'using Illumina Infinium HumanMethylation450 platform')
+  invtitle = paste('TCGA Analysis of DNA Methylation for', disease, 'using Illumina Infinium', platform, 'platform')
   pub.date = paste('Public Release Date', date(), sep="\t")
   protocoln = c('labeling','hybridization','scan')
   protocols = c('labeling','hybridization','image_acquisition')
@@ -90,9 +90,9 @@ buildIDF <- function(x, version='0', platform='HumanMethylation450')
     #               protocol6='within_bioassay_data_set_function') 
     #           
     paste(c('Protocol Description',
-            'Illumina Infinium HumanMethylation450 Labeled Extract',
-            'Illumina Infinium HumanMethylation450 Hybridization Protocol',
-            'Illumina Infinium HumanMethylation450 Scan Protocol'),
+            paste('Illumina Infinium', platform, 'Labeled Extract'),
+            paste('Illumina Infinium', platform, 'Hybridization Protocol'),
+            paste('Illumina Infinium', platform, 'Scan Protocol')),
             collapse="\t"),
     'Protocol Parameters',
     '', # chunk separator
@@ -185,7 +185,7 @@ buildSDRF <- function(x, version='0',platform='HumanMethylation450',lvls=c(1:3))
               datalevel2='Comment [TCGA Data Level]',         # Level 2, duh
               include2='Comment [TCGA Include for Analysis]', # yes
 
-              ## Level 3 : masked betas, pvals
+              ## Level 3 : masked betas, pvals/symbols, chromosome, coordinate
 
               protocol6='Protocol REF',                       # bg correction
               name3='Normalization Name',                     # TCGA ID
