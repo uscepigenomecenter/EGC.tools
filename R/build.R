@@ -127,14 +127,16 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
   } # }}}
   diseasestub = paste('jhu-usc.edu', disease, sep='_')
   stopifnot('TCGA.ID' %in% varLabels(x))
-  sampleNames(x) <- x$TCGA.ID
+  if(!identical(sampleNames(x), x$TCGA.ID)) sampleNames(x) <- x$TCGA.ID
   dirs$raw = paste(base, 'raw', disease, sep='/')
   pkged = dirs$archive = paste(base, 'tcga', disease, sep='/')
   message('Assuming symlinks $HOME/meth27k and $HOME/meth450k both exist...')
 
   if(platform == 'HumanMethylation27') { # {{{
+    require(IlluminaHumanMethylation27k.db)
     base = paste( Sys.getenv('HOME'), 'meth27k', sep='/' ) # }}}
   } else { # {{{
+    require(IlluminaHumanMethylation450k.db)
     base = paste( Sys.getenv('HOME'), 'meth450k', sep='/' ) 
   } # }}}
 
@@ -209,6 +211,8 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
     message(paste('Creating directory', dirs$level_3, '...'))
     if(!file.exists(dirs$level_3)) dir.create(dirs$level_3)
     setwd(dirs$level_3)
+
+    # un-mask all the intensities (add pvals?!?)
     betas(x) <- methylated(x)/total.intensity(x)
     if( !('SNP10' %in% fvarLabels(x)) ) {
       data(SNPs) # can upgrade later!
@@ -239,11 +243,28 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
       message(paste("Writing level 3 data for sample", which(subjects == s),
                     "of", length(subjects), "in TCGA batch", batchname))
 
+      # kludge for gene symbols 
+      if( !('SYMBOL' %in% fvarLabels(x)) ) { # {{{
+        if( platform == 'HumanMethylation450' ) {
+          mapSymbols = toggleProbes(IlluminaHumanMethylation450kSYMBOL, 'all')
+        } else if( platform == 'HumanMethylation27' ) {
+          mapSymbols = toggleProbes(IlluminaHumanMethylation27kSYMBOL, 'all')
+        }
+        fData(x)[ , 'SYMBOL'] = mget(featureNames(x), mapSymbols, ifnotfound=NA)
+        fData(x)[ is.na(fData(x)$SYMBOL), 'SYMBOL' ] = '' 
+      } # }}}
+
+      # kludges for chromosome and coordinates
+      for( fvar in c('CHR36','CPG36') ) { # {{{
+        if( !(fvar %in% fvarLabels(x)) ) {
+          fData(x)[ , fvar ] = mget( featureNames(x), 
+                                     get(paste('Illumina', platform, 'k', fvar,
+                                               sep='')) )
+        }
+      } # }}}
+
       ## Level 3, 27k: masked betas, symbols, chr.hg18, site.hg18
       ## Level 3, 450k: masked betas, pvals, chr.hg18, site.hg18
-      for( fvar in c('SYMBOL','CHR36','CPG36') ) { # for DCC use
-        if( !(fvar %in% fvarLabels(x)) ) fData(x)[ , fvar ] = NA
-      }
       lvl3data = data.frame( Beta=betas(x)[,xs], 
                              Pval=pvals(x)[,xs],            # dropped if 27k
                              Symbol=fData(x)[,'SYMBOL'],    # dropped if 450k
@@ -252,7 +273,7 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
       lvl3data[ which(lvl3data$Pval > 0.05), 'Beta' ] <- NA # mask SNP/RPT too
       rownames(lvl3data) = featureNames(x)
       dump.file = paste(paste(diseasestub,platform,b,'lvl-3',s,'txt',sep='.'))
-      headers1 = paste('Hybridization REF', s, s, sep="\t")
+      headers1 = paste('Hybridization REF', s, s, s, s, sep="\t")
       headers2 = paste(l3headers, collapse="\t")
       cat(headers1, "\n", sep='', file=dump.file)
       cat(headers2, "\n", sep='', file=dump.file, append=TRUE)
