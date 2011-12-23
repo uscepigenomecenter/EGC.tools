@@ -3,7 +3,7 @@
 ## Level 0 / AUX: processing logs, scripts, .SDF files, mappings
 ## Level 1: IDAT files ( two lines per sample in the SDRF )
 ## Level 2: background-corrected probe intensities ( M, U, Pval )
-## Level 3: SNP10-masked beta values ( ADF points to GEO platform descriptor )
+## Level 3: SNP10/pval-masked beta values with symbol, chrom.hg18, coord.hg18
 ##
 reloadEgcTools <- function()
 { # {{{
@@ -179,12 +179,14 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
       xs = which(sampleNames(x) == s)
       message(paste("Writing level 2 data for sample", which(subjects == s),
                     "of", length(subjects), "in TCGA batch", batchname))
-      lvl2data = data.frame( M=methylated(x)[,xs], U=unmethylated(x)[,xs] )
+      lvl2data = data.frame( M=methylated(x)[,xs], 
+                             U=unmethylated(x)[,xs],
+                             P=pvals(x)[,xs] )
       rownames(lvl2data) = featureNames(x)
       dump.file = paste(paste(diseasestub,platform,b,'lvl-2',s,'txt',sep='.'))
-      headers1 = paste('Hybridization REF', s, s, sep="\t")
+      headers1 = paste('Hybridization REF', s, s, s, sep="\t")
       headers2 = paste('Composite Element REF', 'Methylated_Intensity', 
-                       'Unmethylated_Intensity', sep="\t")
+                       'Unmethylated_Intensity', 'Detection_P_value', sep="\t")
       cat(headers1, "\n", sep='', file=dump.file)
       cat(headers2, "\n", sep='', file=dump.file, append=TRUE)
       write.table(lvl2data, file=dump.file, append=TRUE, quote=FALSE,
@@ -211,6 +213,7 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
     message(paste('Creating directory', dirs$level_3, '...'))
     if(!file.exists(dirs$level_3)) dir.create(dirs$level_3)
     setwd(dirs$level_3)
+    b = batch.id
 
     # un-mask all the intensities (add pvals?!?)
     betas(x) <- methylated(x)/total.intensity(x)
@@ -220,58 +223,26 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
       fData(x)$SNP10[ which(featureNames(x) %in% SNPs) ] = 1
     }
     betas(x)[ which(fData(x)$SNP10==1), ] = NA
-    b = batch.id
-
-    # ugly nasty kludge for DCC fiddling
-    if( platform == 'HumanMethylation450' ) { 
-      l3headers = c(rows='Composite Element REF', # {{{
-                    Beta='Beta_value',
-                    Pval='Detection_P_value',
-                    Chrom='Chromosome',
-                    Coord='Genomic_Coordinate') # }}}
-    } else if( platform == 'HumanMethylation27') {
-      l3headers = c(rows='Composite Element REF', # {{{
-                    Beta='Beta_value',
-                    Symbol='Gene_Symbol',
-                    Chrom='Chromosome',
-                    Coord='Genomic_Coordinate') # }}}
-    }
-
+    l3headers = c('Composite Element REF','Beta_value',
+                  'Gene_Symbol','Chromosome','Genomic_Coordinate')
+    additional.columns = l3headers[3:5] # as on the above line
+    if(!all(additional.columns %in% fvarLabels(x))) { # {{{
+      data(level3.symbols) # merged from 450k and 27k manifests
+      missing.cols = setdiff(additional.columns, fvarLabels(x))
+      fData(x) <- cbind(fData(x), level3.symbols[featureNames(x), missing.cols])
+    } # }}}
+  
     # reduce code duplication between serial & parallel 
     write.level3 <- function(s) { # {{{
       xs = which(sampleNames(x) == s)
       message(paste("Writing level 3 data for sample", which(subjects == s),
                     "of", length(subjects), "in TCGA batch", batchname))
-
-      # kludge for gene symbols 
-      if( !('SYMBOL' %in% fvarLabels(x)) ) { # {{{
-        if( platform == 'HumanMethylation450' ) {
-          mapSymbols = toggleProbes(IlluminaHumanMethylation450kSYMBOL, 'all')
-        } else if( platform == 'HumanMethylation27' ) {
-          mapSymbols = toggleProbes(IlluminaHumanMethylation27kSYMBOL, 'all')
-        }
-        fData(x)[ , 'SYMBOL'] = mget(featureNames(x), mapSymbols, ifnotfound=NA)
-        fData(x)[ is.na(fData(x)$SYMBOL), 'SYMBOL' ] = '' 
-      } # }}}
-
-      # kludges for chromosome and coordinates
-      for( fvar in c('CHR36','CPG36') ) { # {{{
-        if( !(fvar %in% fvarLabels(x)) ) {
-          fData(x)[ , fvar ] = mget( featureNames(x), 
-                                     get(paste('Illumina', platform, 'k', fvar,
-                                               sep='')) )
-        }
-      } # }}}
-
-      ## Level 3, 27k: masked betas, symbols, chr.hg18, site.hg18
-      ## Level 3, 450k: masked betas, pvals, chr.hg18, site.hg18
-      lvl3data = data.frame( Beta=betas(x)[,xs], 
-                             Pval=pvals(x)[,xs],            # dropped if 27k
-                             Symbol=fData(x)[,'SYMBOL'],    # dropped if 450k
-                             Chrom=fData(x)[,'CHR36'],      # must be hg18  
-                             Coord=fData(x)[,'CPG36'] )     # must be hg18 
-      lvl3data[ which(lvl3data$Pval > 0.05), 'Beta' ] <- NA # mask SNP/RPT too
+      lvl3data = data.frame(Beta=betas(x)[,xs], 
+                            Gene_Symbol=fData(x)[,'Gene_Symbol'],
+                            Chromosome=fData(x)[,'Chromosome'],
+                            Genomic_Coordinate=fData(x)[,'Genomic_Coordinate'])
       rownames(lvl3data) = featureNames(x)
+      lvl3data[ which(lvl3data$Pval > 0.05), 'Beta' ] <- NA
       dump.file = paste(paste(diseasestub,platform,b,'lvl-3',s,'txt',sep='.'))
       headers1 = paste('Hybridization REF', s, s, s, s, sep="\t")
       headers2 = paste(l3headers, collapse="\t")

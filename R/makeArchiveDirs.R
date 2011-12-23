@@ -13,8 +13,10 @@ makeArchiveDirs <- function(map, version='0', base=NULL, lvls=c('aux','Level_1',
   } # }}}
   stopifnot( is(map, 'data.frame') )
   if(any(map$histology == 'Cytogenetically Normal')) { 
-    message('There are cell line controls in your data, which may fail at DCC.')
-  } 
+    message('There are cell line controls in your data, which MAY fail at DCC.')
+  } else {
+    message('There are no cell line controls in your data, just so you know.')
+  }
   dirs = list()
   if(is.null(base)) { # {{{
     message('Assuming symlinks $HOME/meth27k and $HOME/meth450k both exist...')
@@ -104,4 +106,3 @@ makeArchiveDirs <- function(map, version='0', base=NULL, lvls=c('aux','Level_1',
   return(dirs)
 
 } # }}}
-
