@@ -3,22 +3,27 @@
 ## Level 0 / AUX: processing logs, scripts, .SDF files, mappings
 ## Level 1: IDAT files ( two lines per sample in the SDRF )
 ## Level 2: background-corrected probe intensities ( M, U, Pval )
-## Level 3: SNP10/pval-masked beta values with symbol, chrom.hg18, coord.hg18
-##
-reloadEgcTools <- function()
-{ # {{{
-  base::detach(package:EGC.tools, unload=TRUE)
-  library(EGC.tools)
-} # }}}
+## Level 3: SNP10/pval-masked beta values with symbols, chrom.hg18, coord.hg18
 
 ## load and canonicalize
-loadMap <- function(disease) 
+loadMap <- function(disease, base=NULL, platform='HumanMethylation450') 
 { # {{{ 
+  oldwd = getwd()
+  if(is.null(base)) { # {{{
+    message('Assuming symlinks $HOME/meth27k and $HOME/meth450k both exist...')
+    if(platform == 'HumanMethylation27') {
+      base = paste( Sys.getenv('HOME'), 'meth27k', sep='/' ) # default
+    } else { 
+      base = paste( Sys.getenv('HOME'), 'meth450k', sep='/' ) # default
+    }
+  } # }}}
+  setwd( paste(base, 'mappings.aux', sep='/') )
   map = read.csv( paste(disease, 'mappings', 'csv', sep='.'), 
                   stringsAsFactors=F,
                   row.names=1)
   map = canonicalizeMapping(map)
   map$BATCH.ID = as.character(as.numeric(as.factor(map$TCGA.BATCH)))
+  setwd(oldwd)
   return(map)
 } # }}}
 
@@ -34,25 +39,6 @@ mapBatches <- function(xls.files, parallel=FALSE, link.raw=FALSE)
   map$BATCH.ID = as.numeric(as.factor(map$TCGA.BATCH))
   if(link.raw == TRUE) linkRawData(map, unlink.old.files=FALSE)
   return(map)
-} # }}}
-
-## not currently using this, since run-by-batch seems to be less trouble
-loadBatches <- function(map) ## FIXME: use ff for this step, or per-batch sets
-{ # {{{
-  require(methylumi)
-  if(nrow(map) > 97) { # don't want to have single-chip overhangs
-    message('Splitting into 96-chip batches... this WILL thrash with low RAM!')
-    map.extra = map[ -c(1:96), ] 
-    map = map[ c(1:96), ]
-    ##
-    ## FIXME: use temporary files or SOMETHING to avoid this...
-    ##
-    return(combine( loadBatches(map), loadBatches(map.extra) ))
-  } else { 
-    mlumi = methylumIDAT(map, parallel=TRUE)
-    mlumi = stripOOB(methylumi.bgcorr(mlumi, 'noob'))
-    return( mlumi )
-  }
 } # }}}
 
 ## e.g. runBatchByName(map.UCEC,'137') is the same as runBatchByID(map.UCEC,10)
@@ -104,7 +90,7 @@ runBatchByID <- function(map, batch.id,base=NULL,platform='HumanMethylation450')
   setwd(oldwd)
 } # }}}
 
-## for breaking up big tumors by batch
+## write level 1/2/3 for a batch -- aux/mage-tab are still done with a full map
 writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
 { # {{{ assuming that the full map will be used for aux and mage-tab
 
@@ -248,7 +234,7 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
       headers2 = paste(l3headers, collapse="\t")
       cat(headers1, "\n", sep='', file=dump.file)
       cat(headers2, "\n", sep='', file=dump.file, append=TRUE)
-      write.table(lvl3data[ , names(l3headers)[-1] ], # kludge
+      write.table(lvl3data,
                   file=dump.file, quote=FALSE, append=TRUE,
                   row.names=TRUE, col.names=FALSE, sep="\t")
       return('done')
@@ -265,7 +251,7 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
 
   } # }}}
 
-  message(paste(paste("Finished writing batch", batch.id, "level"), lvls))
+  message(paste(paste("Wrote", disease, "batch", batch.id, "level"), lvls))
 
 } # }}}
 
@@ -371,6 +357,7 @@ packageAndSign <- function(map, base=NULL, platform='HumanMethylation450')
   setwd(oldwd)
 } # }}}
 
+## Does what it says on the tin -- tries to validate a newly built tumor archive
 validateArchive <- function(map,base=NULL,platform='HumanMethylation450',full=F)
 { # {{{
   oldwd=getwd()

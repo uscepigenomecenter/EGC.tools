@@ -14,13 +14,12 @@ canonicalizeMapping <- function (map, synonyms = NULL) {
   # {{{
     map = map[which(!is.na(map[,1])),] # blunt but effective
     if (is.null(synonyms)) {
-      synonyms = list(barcode = c("Complete.Barcode", "Chip.Slot"), 
+      synonyms = list(barcode = c("Complete.Barcode", "Complete.Barcode.ID"),
                       histology = c("Histology", "X.Histology"), 
                       tissue = c("Tissue.Type"), 
                       diseaseabr = c("Disease.Abbreviation"), 
                       TCGA.BATCH = c("Batch", "TCGAbatch"), 
                       TCGA.ID = c("Biospecimen.Barcode.Side"), 
-                      TCGA.bottom.ID = c("Biospecimen.Barcode.Bottom"), 
                       source = c("Plate.Well"))
     }
     for (i in setdiff(names(synonyms), names(map))) {
