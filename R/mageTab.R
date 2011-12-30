@@ -288,10 +288,17 @@ mageTab <- function(map, version='0', base=NULL, platform='HumanMethylation450')
     map <- pData(x)
   } # }}}
   disease = unique(map$diseaseabr)
+
+  # shady hack for LAML 450k 
+  if('BATCH.ID' %in% names(map) && length(levels(as.factor(map$BATCH.ID)))==1){
+    BID = unique(map$BATCH.ID)
+  } else {
+    BID = 1 
+  }
   stopifnot(length(disease) == 1)
   archive.dir = paste(Sys.getenv('HOME'), 'meth450k', 'tcga', disease, 
                       paste(paste( 'jhu-usc.edu', disease, sep='_'), platform,
-                            'mage-tab','1',version,'0',sep='.'),sep='/')
+                            'mage-tab', BID, version, '0', sep='.'), sep='/')
   if(!('BATCH.ID' %in% names(map))) { # {{{
     stopifnot('TCGA.BATCH' %in% names(map))
     map$BATCH.ID = as.numeric(as.factor(map$TCGA.BATCH))
@@ -311,15 +318,25 @@ addDescription <- function(x, platform='HumanMethylation450') {
   }
   disease = unique(x$diseaseabr)
   stopifnot(length(disease) == 1)
-  boilerplate = paste('This data archive contains the Cancer Genome Atlas (TCGA) analysis of DNA methylation profiling using the IIllumina Infinium',platform,'platform. The Infinium platform analyzes up to 482,421 CpG dinucleotides and 3091 CpH trinucleotides, spanning gene-associated elements as well as intergenic regions. DNA samples were received, bisulfite converted and cytosine methylation was evaluated using IIllumina Infinium',platform,'microarrays.')
+  if(platform == 'HumanMethylation450') {
+    boilerplate = paste('This data archive contains the Cancer Genome Atlas (TCGA) analysis of DNA methylation profiling using the IIllumina Infinium',platform,'platform. The Infinium platform analyzes up to 482,421 CpG dinucleotides and 3091 CpH trinucleotides, spanning gene-associated elements as well as intergenic regions. DNA samples were received, bisulfite converted and cytosine methylation was evaluated using IIllumina Infinium',platform,'microarrays.')
+  } else { 
+    boilerplate = paste('This data archive contains the Cancer Genome Atlas (TCGA) analysis of DNA methylation profiling using the IIllumina Infinium',platform,'platform. The Infinium platform analyzes up to 27598 CpG dinucleotides, primarily within 1500bp of putative gene transcription start sites.  DNA samples were received, bisulfite converted and cytosine methylation was evaluated using IIllumina Infinium',platform,'microarrays.')
+  }
   sample.desc = paste('This archive contains Infinium DNA methylation data for',
                       disease, 'samples.')
-  level.desc = 'Data levels and the files contained in each data level package are as follows:'
-  level.desc = paste(level.desc,'',
-'AUX: Auxilary directory containing .sdf files, mappings, and processing logs.',
-'LEVEL 1: Level 1 data contain raw IDAT files (two per sample) as produced by the iScan system and as mapped by the SDRF and also in the disease mapping file.',
-'LEVEL 2: Level 2 data contain background-corrected methylated (M) and unmethylated (U) summary intensities as extracted by the methylumi package.  Background correction is performed using a normal-exponential convolution.',
-'LEVEL 3: Derived summary measures (beta values: M/(M+U) for each locus) with non-detection probabilities (P-values) computed using the ECDF of the negative control probes in each color channel.  Probes annotated as having a SNP within 10bp of the interrogated site are masked as NA across all samples in a batch, and probes with a non-detection probability greater than 0.05 are also masked.',
-  sep="\n")
-  cat(boilerplate, sample.desc, level.desc, file='DESCRIPTION.txt', sep="\n")
+
+  level.desc = 'The files contained in each data level package are as follows:'
+
+  level.desc = paste(level.desc,
+'AUX: Auxilary directory with .csv mappings, .sdf files, and processing logs.',
+
+'LEVEL 1: Level 1 data contain raw IDAT files (two per sample) as produced by the iScan system and as mapped by the SDRF and also in the disease mapping file. These files can be directly processed by the `methylumi` or `minfi` R packages; a comma-separated value (CSV) file in the AUX archive is provided to ease this.',
+
+'LEVEL 2: Level 2 data contain background-corrected methylated (M) and unmethylated (U) summary intensities as extracted by the methylumi package.  Non-detection probabilities (P-values) were computed as the minimum of the two values (one per allele) for the empirical cumulative density function of the negative control probes in the appropriate color channel.  Background correction is performed via normal-exponential deconvolution (currently NOT stratified by probe sequence). Multiple-batch archives have the intensities in each of the two channels multiplicatively scaled to match a reference sample (by default, the first one.)',
+
+'LEVEL 3: Derived summary measures (beta values: M/(M+U) for each interrogated locus) with annotations for gene symbol, chromosome (hg18), and CpG/CpH coordinate (hg18). Probes annotated as having a SNP within 10bp of the interrogated site are masked as NA across all samples, and probes with a non-detection probability (P-value) greater than 0.05 in a given sample are masked as NA on that chip.',
+
+  sep="\n\n")
+  cat(boilerplate, sample.desc, level.desc, file='DESCRIPTION.txt', sep="\n\n")
 } # }}}
