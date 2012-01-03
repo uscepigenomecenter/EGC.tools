@@ -50,7 +50,12 @@ canonicalizeMapping <- function (map, synonyms = NULL) {
         message(paste("Could not assemble column",k,"from component pieces..."))
       }
     }
-    map$name = map$TCGA.ID # ugly horrible disgusting hack
+
+    ## match TCGA ID fragments with sample labels, pass 1
+    ## (pass 2 is post-QC: cluster on X probes, label by chrX SNP6 copy number)
+    if('histology' %in% names(map)) checkSampleLabels(map)
+
+    map$name = map$TCGA.ID # ugly disgusting hack
     if( !all( names(synonyms) %in% names(map) ) ) {
       message(paste('Missing',
                     paste( setdiff(names(synonyms), names(map)), collapse=', '),
