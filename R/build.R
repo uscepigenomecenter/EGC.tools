@@ -32,13 +32,13 @@ mapBatches <- function(xls.files, parallel=FALSE, link.raw=FALSE)
 { # {{{
   if(parallel) {
     require(parallel)
-    map = do.call(rbind, mclapply(xls.files, canonicalizeExcelFile))
+    map = do.call(rbind, mclapply(xls.files, canonicalizeExcelFile, check=F))
   } else { 
-    map = do.call(rbind, lapply(xls.files, canonicalizeExcelFile))
+    map = do.call(rbind, lapply(xls.files, canonicalizeExcelFile, check=F))
   }
   map$BATCH.ID = as.numeric(as.factor(map$TCGA.BATCH))
   if(link.raw == TRUE) linkRawData(map, unlink.old.files=FALSE)
-  return(map)
+  return(canonicalizeMapping(map))
 } # }}}
 
 ## e.g. runBatchByName(map.UCEC,'137') is the same as runBatchByID(map.UCEC,10)

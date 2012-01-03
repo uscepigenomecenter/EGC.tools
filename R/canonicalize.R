@@ -1,16 +1,16 @@
 # tidy up Dan's mapping spreadsheets (i.e. BeadChip Decoder sheets)
 
-canonicalizeExcelFile <- function(filename) {
+canonicalizeExcelFile <- function(filename, check=TRUE) {
   # {{{ 
   require('xlsx')
   message(paste("Reading first worksheet in", filename, "as mappings..."))
   map = read.xlsx(filename, 1, stringsAsFactors=FALSE) 
-  newmap = canonicalizeMapping(map)
+  newmap = canonicalizeMapping(map, check=check)
   detach('package:xlsx', unload=TRUE) # Java fucks things up otherwise
   return(newmap)
 } # }}}
 
-canonicalizeMapping <- function (map, synonyms = NULL) {
+canonicalizeMapping <- function (map, synonyms = NULL, check = TRUE) {
   # {{{
     map = map[which(!is.na(map[,1])),] # blunt but effective
     if (is.null(synonyms)) {
@@ -53,7 +53,7 @@ canonicalizeMapping <- function (map, synonyms = NULL) {
 
     ## match TCGA ID fragments with sample labels, pass 1
     ## (pass 2 is post-QC: cluster on X probes, label by chrX SNP6 copy number)
-    if('histology' %in% names(map)) checkSampleLabels(map)
+    if(check) if('histology' %in% names(map)) checkSampleLabels(map)
 
     map$name = map$TCGA.ID # ugly disgusting hack
     if( !all( names(synonyms) %in% names(map) ) ) {
