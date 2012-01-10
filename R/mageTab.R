@@ -117,6 +117,9 @@ buildIDF <- function(x, version='0', platform='HumanMethylation450')
 
 } # }}}
 
+
+## FIXME: accomodate differing versions if !is.vector(version) 
+##        by expanding scalar to version <- rep(version, 5) and naming them
 ## Adds Sample and Data Relationship Format file for all batches in an archive.
 buildSDRF <- function(x, version='0',platform='HumanMethylation450',lvls=c(1:3))
 { # {{{
@@ -289,14 +292,15 @@ mageTab <- function(map, version='0', base=NULL, platform='HumanMethylation450')
   } # }}}
   disease = unique(map$diseaseabr)
 
-  # shady hack for LAML 450k 
+  ## FIXME: accomodate differing logic for LAML 450k vs. 27k
   if('BATCH.ID' %in% names(map) && length(levels(as.factor(map$BATCH.ID)))==1){
     BID = unique(map$BATCH.ID)
   } else {
     BID = 1 
   }
   stopifnot(length(disease) == 1)
-  archive.dir = paste(Sys.getenv('HOME'), 'meth450k', 'tcga', disease, 
+  platform.dir = ifelse(platform=='HumanMethylation450k', 'meth450k', 'meth27k')
+  archive.dir = paste(Sys.getenv('HOME'), platform.dir, 'tcga', disease, 
                       paste(paste( 'jhu-usc.edu', disease, sep='_'), platform,
                             'mage-tab', BID, version, '0', sep='.'), sep='/')
   if(!('BATCH.ID' %in% names(map))) { # {{{

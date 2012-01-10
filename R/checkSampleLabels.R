@@ -8,5 +8,5 @@ checkSampleLabels <- function(map)
                             which(levels(map$designation)=='Tumor'))
   names(map)[which(names(map) == 'designation')] = 'designation.by.TCGA.ID'
   cat("\n","Please check the following table for any inconsistencies:","\n\n")
-  with(map, print(table(histology, designation.by.TCGA.ID)))
+  with(map, print(table(toupper(histology), designation.by.TCGA.ID)))
 } # }}}
