@@ -30,8 +30,8 @@ makeArchiveDirs <- function(map, version='0', base=NULL, lvls=c('aux','Level_1',
   dirs$disease = paste(base, 'raw', disease, sep='/')
   dirs$mappings = paste(base, 'mappings.aux', sep='/')
   diseasestub = paste('jhu-usc.edu', disease, sep='_')
-  dirs$archive = pkged = paste(base, 'tcga', disease, sep='/')
-  dir.create(dirs$archive)
+  dirs$archive = pkged = paste(base, 'tcga', disease, paste("version", version, sep=""), sep='/')
+  if(!file.exists(dirs$archive)) dir.create(dirs$archive)
   setwd(dirs$disease)
   oldwd = getwd()
   names(lvls) = lvls
