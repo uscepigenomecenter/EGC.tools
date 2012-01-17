@@ -1,4 +1,5 @@
 \name{loadMap}
+\alias{loadMap}
 \title{
   Load the existing mapping file for a disease and canonicalize it if needed.
 }

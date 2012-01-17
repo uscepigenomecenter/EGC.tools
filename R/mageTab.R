@@ -309,9 +309,9 @@ mageTab <- function(map, version='0', base=NULL, platform='HumanMethylation450')
   } # }}}
   oldwd = getwd()
   setwd(archive.dir)
-  addDescription(map)
-  buildIDF(map, version=version)
-  buildSDRF(map, version=version)
+  addDescription(map, platform=platform)
+  buildIDF(map, version=version, platform=platform)
+  buildSDRF(map, version=version, platform=platform)
   setwd(oldwd)
 } # }}} 
 

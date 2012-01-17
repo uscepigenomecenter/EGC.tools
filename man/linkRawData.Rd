@@ -1,4 +1,5 @@
 \name{linkRawData}
+\alias{linkRawData}
 \title{
   From a disease map (a data.frame), link up all of the raw IDAT and SDF files.
 }

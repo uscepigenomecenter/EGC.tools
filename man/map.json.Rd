@@ -1,5 +1,5 @@
 \name{map.json}
-\alias{EGC.tools}
+\alias{map.json}
 \title{
   Map samples (or diseases or tissues or whatever) from Geneus to R/JSONIO
 }

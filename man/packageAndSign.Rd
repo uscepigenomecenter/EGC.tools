@@ -1,4 +1,5 @@
 \name{packageAndSign}
+\alias{packageAndSign}
 \title{
   Generate MD5sums and tarballs for a TCGA tumor archive.
 }
