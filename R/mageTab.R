@@ -322,9 +322,9 @@ mageTab <- function(map, old.version='0', new.version='0', base=NULL, platform='
   } # }}}
   oldwd = getwd()
   setwd(archive.dir)
-  addDescription(map)
-  buildIDF(map, version=new.version)
-  buildSDRF(map, old.version=old.version, new.version=new.version, lvls=lvls)
+  addDescription(map, platform=platform)
+  buildIDF(map, version=new.version, platform=platform)
+  buildSDRF(map, old.version=old.version, new.version=new.version, platform=platform, lvls=lvls)
   setwd(oldwd)
 } # }}} 
 
