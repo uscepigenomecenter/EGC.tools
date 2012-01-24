@@ -44,6 +44,7 @@ makeArchiveDirs <- function(map, version='0', base=NULL, lvls=c('aux','Level_1',
     oldwd = getwd()
     dir.create(dirs$aux)
     setwd(dirs$aux)
+    system(paste("cp -r", paste(dirs$disease, "*.sdf", sep="/"), ".", sep=" "))
     diseasemap = paste(disease, 'mappings', 'csv', sep='.')
     if(METHYLUMISET) writeTidyHistory(x, dirs$aux)
     write.csv(map, file=diseasemap)

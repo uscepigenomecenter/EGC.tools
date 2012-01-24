@@ -229,6 +229,8 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
                             Genomic_Coordinate=fData(x)[,'Genomic_Coordinate'])
       rownames(lvl3data) = featureNames(x)
       lvl3data[ which(lvl3data$Pval > 0.05), 'Beta' ] <- NA
+      lvl3data$Chromosome[which(is.na(lvl3data$Chromosome))] <- NA
+      lvl3data$Genomic_Coordinate[which(is.na(lvl3data$Genomic_Coordinate))] <- 0
       dump.file = paste(paste(diseasestub,platform,b,'lvl-3',s,'txt',sep='.'))
       headers1 = paste('Hybridization REF', s, s, s, s, sep="\t")
       headers2 = paste(l3headers, collapse="\t")

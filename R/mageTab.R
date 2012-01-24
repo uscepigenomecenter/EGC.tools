@@ -352,7 +352,7 @@ addDescription <- function(x, platform='HumanMethylation450') {
 
 'LEVEL 2: Level 2 data contain background-corrected methylated (M) and unmethylated (U) summary intensities as extracted by the methylumi package.  Non-detection probabilities (P-values) were computed as the minimum of the two values (one per allele) for the empirical cumulative density function of the negative control probes in the appropriate color channel.  Background correction is performed via normal-exponential deconvolution (currently NOT stratified by probe sequence). Multiple-batch archives have the intensities in each of the two channels multiplicatively scaled to match a reference sample (by default, the first one.)',
 
-'LEVEL 3: Derived summary measures (beta values: M/(M+U) for each interrogated locus) with annotations for gene symbol, chromosome (hg18), and CpG/CpH coordinate (hg18). Probes annotated as having a SNP within 10bp of the interrogated site are masked as NA across all samples, and probes with a non-detection probability (P-value) greater than 0.05 in a given sample are masked as NA on that chip.',
+'LEVEL 3: Derived summary measures (beta values: M/(M+U) for each interrogated locus) with annotations for gene symbol, chromosome (hg18), and CpG/CpH coordinate (hg18). Probes annotated as having a SNP within 10bp of the interrogated site are masked as NA across all samples, and probes with a non-detection probability (P-value) greater than 0.05 in a given sample are masked as NA on that chip. Probes that are mapped to multiple sites on hg18 are annotated as NA for chromosome (hg18) and 0 for CpG/CpH coordinate (hg18)',
 
   sep="\n\n")
   cat(boilerplate, sample.desc, level.desc, file='DESCRIPTION.txt', sep="\n\n")
