@@ -121,7 +121,7 @@ buildIDF <- function(x, version='0', platform='HumanMethylation450')
 ## FIXME: accomodate differing versions if !is.vector(version) 
 ##        by expanding scalar to version <- rep(version, 5) and naming them
 ## Adds Sample and Data Relationship Format file for all batches in an archive.
-buildSDRF <- function(x, version='0',platform='HumanMethylation450',lvls=c(1:3))
+buildSDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation450',lvls=c(1:3))
 { # {{{
 
   if(is(x, 'MethyLumiSet')) { # {{{
@@ -142,7 +142,7 @@ buildSDRF <- function(x, version='0',platform='HumanMethylation450',lvls=c(1:3))
     disease = diseases[1]
   }
   prepreamble =  paste('jhu-usc.edu_',disease,'.',platform,sep='')
-  preamble =  paste(prepreamble,'1',version,'0',sep='.')
+  preamble =  paste(prepreamble,'1',new.version,'0',sep='.')
   # <Domain>_<TumorType>.<Platform>.<ArchiveSerialIndex>.sdrf.txt
   sdrf.name = paste(preamble, 'sdrf','txt',sep='.') # all one big SDRF file
   array.ref = paste('Illumina.com','PhysicalArrayDesign',platform, sep=':')
@@ -249,26 +249,38 @@ buildSDRF <- function(x, version='0',platform='HumanMethylation450',lvls=c(1:3))
     chip = x$barcode[ xs ]
 
     # not likely to use these, but just in case...
-    if( !('1' %in% lvls) ) elements['include1'] = 'no'
-    if( !('2' %in% lvls) ) elements['include2'] = 'no'
-    if( !('3' %in% lvls) ) elements['include3'] = 'no'
+    #if( !('1' %in% lvls) ) elements['include1'] = 'no'
+    #if( !('2' %in% lvls) ) elements['include2'] = 'no'
+    #if( !('3' %in% lvls) ) elements['include3'] = 'no'
 
     # {{{ level 1: IDAT files (2 lines per sample)
     # datafile1 will be two entries: one for Cy5 (red) and one for Cy3 (green)
-    elements['archive1'] = paste(prepreamble,'Level_1',b,version,'0', sep='.') 
+    if( !('1' %in% lvls) ) {
+	    elements['archive1'] = paste(prepreamble,'Level_1',b,old.version,'0', sep='.')
+    } else {
+	    elements['archive1'] = paste(prepreamble,'Level_1',b,new.version,'0', sep='.')
+    }
     # }}}
 
     # {{{ level 2: background-corrected M and U intensities
     elements['datafile2'] = paste(prepreamble,b,'lvl-2',s,'txt',sep='.')
     message(paste('Subject',s,'Level 2 data file is ', elements['datafile2']))
-    elements['archive2'] = paste(prepreamble,'Level_2',b,version,'0', sep='.')
+    if( !('2' %in% lvls) ) {
+	    elements['archive2'] = paste(prepreamble,'Level_2',b,old.version,'0', sep='.')
+    } else {
+	    elements['archive2'] = paste(prepreamble,'Level_2',b,new.version,'0', sep='.')
+    }
     message(paste('Subject',s,'Level 2 data file is in', elements['archive2']))
     # }}}
 
     # {{{ level 3: SNP10-masked beta value with ECDF pvalue
     elements['datafile3'] = paste(prepreamble,b,'lvl-3',s,'txt', sep='.')
     message(paste('Subject',s,'Level 3 data file is ', elements['datafile3']))
-    elements['archive3'] = paste(prepreamble,'Level_3',b,version,'0', sep='.')
+    if( !('3' %in% lvls) ) {
+	    elements['archive3'] = paste(prepreamble,'Level_3',b,old.version,'0', sep='.')
+    } else {
+	    elements['archive3'] = paste(prepreamble,'Level_3',b,new.version,'0', sep='.')
+    }
     message(paste('Subject',s,'Level 3 data file is in', elements['archive3']))
     # }}}
 
@@ -283,7 +295,7 @@ buildSDRF <- function(x, version='0',platform='HumanMethylation450',lvls=c(1:3))
 
 } # }}}
 
-mageTab <- function(map, version='0', base=NULL, platform='HumanMethylation450')
+mageTab <- function(map, old.version='0', new.version='0', base=NULL, platform='HumanMethylation450', lvls=c(1:3))
 { # {{{
   if(is(map, 'MethyLumiSet')) { # {{{
     x <- map
@@ -299,10 +311,11 @@ mageTab <- function(map, version='0', base=NULL, platform='HumanMethylation450')
     BID = 1 
   }
   stopifnot(length(disease) == 1)
-  platform.dir = ifelse(platform=='HumanMethylation450k', 'meth450k', 'meth27k')
-  archive.dir = paste(Sys.getenv('HOME'), platform.dir, 'tcga', disease, 
+  platform.dir = ifelse(platform=='HumanMethylation450', 'meth450k', 'meth27k')
+  archive.dir = paste(Sys.getenv('HOME'), platform.dir, 'tcga', disease,
+                      paste("version", new.version, sep=""), 
                       paste(paste( 'jhu-usc.edu', disease, sep='_'), platform,
-                            'mage-tab', BID, version, '0', sep='.'), sep='/')
+                            'mage-tab', BID, new.version, '0', sep='.'), sep='/')
   if(!('BATCH.ID' %in% names(map))) { # {{{
     stopifnot('TCGA.BATCH' %in% names(map))
     map$BATCH.ID = as.numeric(as.factor(map$TCGA.BATCH))
@@ -310,8 +323,8 @@ mageTab <- function(map, version='0', base=NULL, platform='HumanMethylation450')
   oldwd = getwd()
   setwd(archive.dir)
   addDescription(map, platform=platform)
-  buildIDF(map, version=version, platform=platform)
-  buildSDRF(map, version=version, platform=platform)
+  buildIDF(map, version=new.version, platform=platform)
+  buildSDRF(map, old.version=old.version, new.version=new.version, platform=platform, lvls=lvls)
   setwd(oldwd)
 } # }}} 
 

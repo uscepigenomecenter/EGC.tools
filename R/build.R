@@ -115,7 +115,7 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
   stopifnot('TCGA.ID' %in% varLabels(x))
   if(!identical(sampleNames(x), x$TCGA.ID)) sampleNames(x) <- x$TCGA.ID
   dirs$raw = paste(base, 'raw', disease, sep='/')
-  pkged = dirs$archive = paste(base, 'tcga', disease, sep='/')
+  pkged = dirs$archive = paste(base, 'tcga', disease, paste("version", version, sep=""), sep='/')
   message('Assuming symlinks $HOME/meth27k and $HOME/meth450k both exist...')
 
   if(platform == 'HumanMethylation27') { # {{{
@@ -256,7 +256,7 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
 } # }}}
 
 ## build aux, level 1, and mage-tab across all batches; levels 2 & 3 by batch
-buildArchive<-function(map,version='0',base=NULL,platform='HumanMethylation450',                       lvls=c(1:3))
+buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform='HumanMethylation450', lvls=c(1:3))
 { # {{{
   METHYLUMISET = FALSE
   if(is(map, 'MethyLumiSet')) { # {{{ METHYLUMISET = TRUE
@@ -272,12 +272,17 @@ buildArchive<-function(map,version='0',base=NULL,platform='HumanMethylation450',
   } # }}}
   stopifnot('diseaseabr' %in% names(map))
   bs = seq_along(levels(as.factor(map$TCGA.BATCH)))
+  lvl = c("aux", "mage-tab")
+  if(1 %in% lvls) lvl = c(lvl, "Level_1")
+  if(2 %in% lvls) lvl = c(lvl, "Level_2")
+  if(3 %in% lvls) lvl = c(lvl, "Level_3")
+  #if(all(c(1:3) %in% lvls)) lvl = c("aux" , lvl)
   message('Creating archive directories...')
-  dirs = makeArchiveDirs(map, version=version, base=base, platform=platform)
+  dirs = makeArchiveDirs(map, version=new.version, base=base, lvls=lvl, platform=platform)
   message('Writing level 2 and level 3 data...')
   if(METHYLUMISET==TRUE) {
     for(b in bs) {
-      writeBatch(x, b, version=version, lvls=lvls)
+      writeBatch(x, b, version=new.version, lvls=lvls)
     }
   } else {
     for(b in bs) {
@@ -285,17 +290,17 @@ buildArchive<-function(map,version='0',base=NULL,platform='HumanMethylation450',
     }
   }
   message('Writing mage-tab IDF and SDRF files...')
-  mageTab(map, version=version, base=base, platform=platform)
+  mageTab(map, old.version=old.version, new.version=new.version, base=base, platform=platform, lvls=lvls)
   message('Writing checksums for each directory...')
-  justSign(map, base=base, platform=platform) 
+  justSign(map, base=base, version=new.version, platform=platform) 
   message('Validating the data archives...')
-  validateArchive(map, base=base, platform=platform)
+  validateArchive(map, base=base, version=new.version, platform=platform)
   message('If validation passed without errors, run packageAndSign, then SFTP.')
   # packageAndSign(map, base=base, platform=platform) 
 } # }}}
 
 ## Adds MD5sums for all of the archive directories for a tumor. 
-justSign <- function(map, base=NULL, platform='HumanMethylation450') 
+justSign <- function(map, base=NULL, version='0', platform='HumanMethylation450') 
 { # {{{
   oldwd = getwd()
   disease = unique(map$diseaseabr)
@@ -309,7 +314,7 @@ justSign <- function(map, base=NULL, platform='HumanMethylation450')
     }
   } # }}}
 
-  dir.base = paste(base, 'tcga', disease, sep='/')
+  dir.base = paste(base, 'tcga', disease, paste("version", version, sep=""), sep='/')
   setwd(dir.base)
   dir.patt = paste('^./jhu-usc.edu_',disease,'.',platform,sep='')
   dirs = grep(dir.patt, list.dirs(), value=TRUE)
@@ -324,7 +329,7 @@ justSign <- function(map, base=NULL, platform='HumanMethylation450')
 } # }}}
 
 ## Adds MD5sums and tarballs for all of the archive directories for a tumor. 
-packageAndSign <- function(map, base=NULL, platform='HumanMethylation450') 
+packageAndSign <- function(map, base=NULL, version='0', platform='HumanMethylation450') 
 { # {{{
   oldwd = getwd()
   disease = unique(map$diseaseabr)
@@ -338,7 +343,7 @@ packageAndSign <- function(map, base=NULL, platform='HumanMethylation450')
     }
   } # }}}
 
-  dir.base = paste(base, 'tcga', disease, sep='/')
+  dir.base = paste(base, 'tcga', disease, paste("version", version, sep=""), sep='/')
   setwd(dir.base)
   dir.patt = paste('^./jhu-usc.edu_',disease,'.',platform,sep='')
   dirs = grep(dir.patt, list.dirs(), value=TRUE)
@@ -358,7 +363,7 @@ packageAndSign <- function(map, base=NULL, platform='HumanMethylation450')
 } # }}}
 
 ## Does what it says on the tin -- tries to validate a newly built tumor archive
-validateArchive <- function(map,base=NULL,platform='HumanMethylation450',full=F)
+validateArchive <- function(map,base=NULL, version='0', platform='HumanMethylation450',full=F)
 { # {{{
   oldwd=getwd()
   disease = unique(map$diseaseabr)
@@ -372,7 +377,7 @@ validateArchive <- function(map,base=NULL,platform='HumanMethylation450',full=F)
     }
   } # }}}
   message('Assuming $HOME/TCGA points to the validator directory...')
-  archive = paste(base, 'tcga', disease, sep='/')
+  archive = paste(base, 'tcga', disease, paste("version", version, sep=""), sep='/')
   setwd(archive)
   # so that we can get the validator to run in bypass mode...
   system('for i in `ls -d jhu* | grep -v gz`; do touch $i.tar.gz; done')
