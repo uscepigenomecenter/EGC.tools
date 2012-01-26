@@ -1,4 +1,5 @@
 \name{justSign}
+\alias{justSign}
 \title{
   Generate MD5sums for a TCGA tumor archive.
 }

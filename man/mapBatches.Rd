@@ -1,4 +1,5 @@
 \name{mapBatches}
+\alias{mapBatches}
 \title{
   Given a pile of Dan's Excel files, attempt to merge them into a map.
 }

@@ -1,4 +1,6 @@
 \name{buildArchive}
+\alias{buildArchive}
+\alias{EGC.tools}
 \title{
   Build a TCGA archive with aux, level 1, level 2, level 3, and mage-tab dirs. 
 }

@@ -1,4 +1,5 @@
 \name{writeBatch}
+\alias{writeBatch}
 \title{
   Write out one batch of a single- or multi-batch TCGA tumor project. 
 }
