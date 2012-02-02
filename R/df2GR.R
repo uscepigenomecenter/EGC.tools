@@ -17,15 +17,15 @@ df2GR <- function(df, keepColumns=FALSE, ignoreStrand=FALSE)
   } else {
     GR <- with(df, GRanges(chr, IRanges(start=start, end=end)))
   }
-  if(keepColumns) {
-    d <- as(df[, setdiff(names(df),c("chr","start","end","width","strand"))],
-            "DataFrame")
-    elementMetadata(GR) <- d
+  if('name' %in% names(df)) {
+    names(GR) <- df$name
+    df$name <- NULL
+  } else {
+    names(GR) <- rownames(df)
   }
-  names(GR) <- rownames(df)
+  if(keepColumns) {
+    skipped = c("rangename","chr","start","end","width","strand")
+    elementMetadata(GR) <- as(df[, setdiff(names(df), skipped)], "DataFrame")
+  }
   return(GR)
 } # }}}
-
-exons2GR <- function(exons, organism=NULL, toHuman=FALSE) { 
-  if(toHuman && is.null(organism)) stop('Need an organism to liftOver')
-}
