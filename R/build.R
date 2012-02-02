@@ -281,6 +281,7 @@ buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform
   #if(all(c(1:3) %in% lvls)) lvl = c("aux" , lvl)
   message('Creating archive directories...')
   dirs = makeArchiveDirs(map, version=new.version, base=base, lvls=lvl, platform=platform)
+  writeTidyHistory(x, filepath=dirs$aux)
   message('Writing level 2 and level 3 data...')
   if(METHYLUMISET==TRUE) {
     for(b in bs) {
