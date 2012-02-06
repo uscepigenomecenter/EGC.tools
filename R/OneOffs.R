@@ -7,7 +7,7 @@ loadOneOff <- function(mapping, label, platform='HumanMethylation450', path='/au
                                'meth450k', 'meth27k'), 'raw', sep='/')
   oneoff.dir = paste(gsub('raw', 'processed', platform.path), project, label, sep='/')
   save.dir = gsub('raw', 'MethyLumiSets', platform.path) 
-  dir.create(oneoff.dir)
+  if(!file.exists(oneoff.dir)) dir.create(oneoff.dir)
   stopifnot('barcode' %in% names(mapping))
   rownames(mapping) = mapping$barcode
   for(b in as.character(mapping$barcode)) {
