@@ -286,13 +286,15 @@ buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform
   writeTidyHistory(x, filepath=dirs$aux)
   message('Writing level 2 and level 3 data...')
   if(METHYLUMISET==TRUE) {
-    for(b in bs) {
+    invisible(mclapply(bs, function(b) {
+      message(paste('Writing batch', b, '...'))
       writeBatch(x, b, version=new.version, lvls=lvls)
-    }
+    }))
   } else {
-    for(b in bs) {
-      runBatchByID(map,b,base=base,platform=platform)
-    }
+    invisible(mclapply(bs, function(b) {
+      message(paste('Writing batch', b, '...'))
+      runBatchByID(map, b, base=base, platform=platform)
+    }))
   }
   message('Writing mage-tab IDF and SDRF files...')
   mageTab(map, old.version=old.version, new.version=new.version, base=base, platform=platform, lvls=lvls)
