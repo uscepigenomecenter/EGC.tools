@@ -10,15 +10,26 @@ loadOneOff <- function(mapping, label, platform='HumanMethylation450', path='/au
   if(!file.exists(oneoff.dir)) dir.create(oneoff.dir)
   stopifnot('barcode' %in% names(mapping))
   rownames(mapping) = mapping$barcode
-  for(b in as.character(mapping$barcode)) {
-    bdir = paste(platform.path, substr(b, 1, 10), b, sep='/')
-    glob = paste(bdir, '*.idat', sep='')
-    system(paste('ln', glob, oneoff.dir))
-    IDATs = unlist(list.files(path=oneoff.dir, patt=b))
-    print(paste('Linked', paste(IDATs, collapse=' and '), 'to', oneoff.dir))
+  checkDirs <- function(b){
+	  return(file.exists(b))
   }
-  setwd(oneoff.dir)
-  methylumIDAT(mapping$barcode, n.sd=T, oob=T, parallel=T)
+
+  check <- sapply(substr(map$barcode,1,10), function(x){checkDirs(paste(platform.path, x, sep='/'))})
+  if(!all(check)){
+	  failed <- paste(unique(names(check[which(check == FALSE)])), collapse=",")
+	  print(paste("Barcodes", failed, "were not found"))
+	  return(NULL)
+  }else{
+	  for(b in as.character(mapping$barcode)) {
+		  bdir = paste(platform.path, substr(b, 1, 10), b, sep='/')
+		  glob = paste(bdir, '*.idat', sep='')
+		  system(paste('ln', glob, oneoff.dir))
+		  IDATs = unlist(list.files(path=oneoff.dir, patt=b))
+		  print(paste('Linked', paste(IDATs, collapse=' and '), 'to', oneoff.dir))
+	  }
+	  setwd(oneoff.dir)
+	  methylumIDAT(mapping$barcode, n.sd=T, oob=T, parallel=T)
+  }
 } # }}}
 
 writeOneOffExcel <- function(x, label) {
