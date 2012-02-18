@@ -1,5 +1,5 @@
 ## Various functions to build TCGA packages and such
-loadOneOff <- function(mapping, label, platform='HumanMethylation450', path='/auto/uec-02/shared/production/methylation', project='tcga') {
+loadOneOff <- function(mapping, label, platform='HumanMethylation450', path='/export/uec-gs1/laird/shared/production/methylation', project='tcga') {
   # {{{
   require(methylumi)
   platform.path = paste(path, 

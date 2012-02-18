@@ -1,4 +1,4 @@
-verifyDataDirs <- function(map, platform='HumanMethylation450', path='/auto/uec-02/shared/production/methylation', version='0') 
+verifyDataDirs <- function(map, platform='HumanMethylation450', path='/export/uec-gs1/laird/shared/production/methylation', version='0') 
 { # {{{
   if(length(unique(map$diseaseabr) == 1)) disease = toupper(map$diseaseabr[1])
   else stop("You have multiple (or no) disease abbreviations in your map!")
@@ -12,7 +12,7 @@ verifyDataDirs <- function(map, platform='HumanMethylation450', path='/auto/uec-
   return(dirs)
 } # }}}
 
-linkRawData <- function(map, unlink.old.files=TRUE, platform='HumanMethylation450', path='/auto/uec-02/shared/production/methylation', logfile=NULL) 
+linkRawData <- function(map, unlink.old.files=TRUE, platform='HumanMethylation450', path='/export/uec-gs1/laird/shared/production/methylation', logfile=NULL) 
 { # {{{
   diseasedir = verifyDataDirs(map, platform, path)$disease
   oldwd = getwd()
