@@ -39,3 +39,11 @@ plotSampleSummary <- function(x)
 	sample.summary <- getSampleSummary(pvals)
 	hist(sample.summary, col="salmon", main="Histogram of No. of Failed Probes per Sample")
 }
+
+plotDensities <- function(object, controls=NULL, label='Replicate betas'){ # {{{
+  if(!is.null(controls)) object <- object[,controls]
+  ds <- apply(betas(object), 2, density, from=0, to=1, na.rm=TRUE)
+  ymax <- max(do.call(rbind, lapply(ds, function(x) x[['y']])), na.rm=TRUE)
+  plot(ds[[1]], main=label, xlim=c(0, 1), ylim=c(0, ymax), xlab='Methylation')
+  for(i in seq_along(ds)) lines(ds[[i]])
+} # }}}
