@@ -31,3 +31,11 @@ writeProbeSummary <- function(x, filepath='.'){
 	filename <- paste(disease, "probe", "summary", "txt", sep=".")
 	cat(header, ps, file=file.path(filepath, filename), sep="\n")
 }
+
+plotSampleSummary <- function(x)
+{
+	disease <- unique(x$diseaseabr)[1]
+	pvals <- pvals(x)
+	sample.summary <- getSampleSummary(pvals)
+	hist(sample.summary, col="salmon", main="Histogram of No. of Failed Probes per Sample")
+}
