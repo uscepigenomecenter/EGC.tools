@@ -1,3 +1,8 @@
+checkDirs <- function(b)
+{
+	return(file.exists(b))
+}
+
 verifyDataDirs <- function(map, platform='HumanMethylation450', path='/export/uec-gs1/laird/shared/production/methylation', version='0') 
 { # {{{
   if(length(unique(map$diseaseabr) == 1)) disease = toupper(map$diseaseabr[1])
@@ -19,6 +24,14 @@ linkRawData <- function(map, unlink.old.files=TRUE, platform='HumanMethylation45
   setwd(diseasedir)
   stopifnot('barcode' %in% names(map))
   rownames(map) = map$barcode
+  platform.path = paste(path, 
+                        ifelse(grepl('HumanMethylation450',platform,ignore=T),
+                               'meth450k', 'meth27k'), 'raw', sep='/')
+  check <- sapply(substr(map$barcode,1,10), function(x){checkDirs(paste(platform.path, x, sep='/'))})
+  if(!all(check)){
+    failed <- paste(unique(names(check[which(check == FALSE)])), collapse=",")
+    stop(paste("Barcodes", failed, "were not found"))
+  }
   if(unlink.old.files==TRUE) unlink(list.files()) # get your old crap outta here
   if(!is.null(logfile)) unlink(logfile)
   for( beadchip in unique(substr(map$barcode, 1, 10))) {
