@@ -296,11 +296,11 @@ buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform
   }
   message('Writing mage-tab IDF and SDRF files...')
   mageTab(map, old.version=old.version, new.version=new.version, base=base, platform=platform, lvls=lvls)
-  message('Writing checksums for each directory...')
-  justSign(map, base=base, version=new.version, platform=platform) 
+  message('Packaging and signing each directory...')
+  packageAndSign(map, base=base, version=new.version, platform=platform) 
   message('Validating the data archives...')
   validateArchive(map, base=base, version=new.version, platform=platform)
-  message('If validation passed without errors, run packageAndSign, then SFTP.')
+  message('If validation passed without errors, validate again on epigraph without -noremote, then SFTP.')
   # packageAndSign(map, base=base, platform=platform) 
 } # }}}
 
@@ -385,12 +385,12 @@ validateArchive <- function(map,base=NULL, version='0', platform='HumanMethylati
   archive = paste(base, 'tcga', disease, paste("version", version, sep=""), sep='/')
   setwd(archive)
   # so that we can get the validator to run in bypass mode...
-  system('for i in `ls -d jhu* | grep -v gz`; do touch $i.tar.gz; done')
+  #system('for i in `ls -d jhu* | grep -v gz`; do touch $i.tar.gz; done')
   if(full) { 
     validator.command = paste('./validate.sh', archive, '-centertype CGCC')
   } else { 
     validator.command = paste('./validate.sh', archive, # don't expand
-                              '-centertype CGCC -bypass -noremote')
+                              '-centertype CGCC -noremote')
   }
   message(paste('Attempting to run', validator.command))
   setwd(paste( Sys.getenv('HOME'), 'TCGA', sep='/' ) )
