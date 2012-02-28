@@ -14,7 +14,7 @@ loadOneOff <- function(mapping, label, platform='HumanMethylation450', path='/ex
 	  return(file.exists(b))
   }
 
-  check <- sapply(substr(map$barcode,1,10), function(x){checkDirs(paste(platform.path, x, sep='/'))})
+  check <- sapply(substr(mapping$barcode,1,10), function(x){checkDirs(paste(platform.path, x, sep='/'))})
   if(!all(check)){
 	  failed <- paste(unique(names(check[which(check == FALSE)])), collapse=",")
 	  print(paste("Barcodes", failed, "were not found"))
