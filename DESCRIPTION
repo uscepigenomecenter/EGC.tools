@@ -1,8 +1,8 @@
 Package: EGC.tools
 Type: Package
 Title: XLS mapping, TCGA packaging, one-off routines, etc. for USC EGC tasks
-Version: 1.2.14
-Date: 2012-02-22
+Version: 1.2.15
+Date: 2012-03-06
 Author: Tim Triche, Jr., Moiz Bootwalla
 Maintainer: Moiz Bootwalla <bootwall@usc.edu>
 Description: Bead mapping, subsetting, and packaging functions (TCGA and other)
