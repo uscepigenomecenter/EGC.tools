@@ -261,7 +261,7 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
 } # }}}
 
 ## build aux, level 1, and mage-tab across all batches; levels 2 & 3 by batch
-buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform='HumanMethylation450', lvls=c(1:3))
+buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform='HumanMethylation450', magetab.version=NULL, lvls=c(1:3))
 { # {{{
   METHYLUMISET = FALSE
   if(is(map, 'MethyLumiSet')) { # {{{ METHYLUMISET = TRUE
@@ -277,13 +277,16 @@ buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform
   } # }}}
   stopifnot('diseaseabr' %in% names(map))
   bs = seq_along(levels(as.factor(map$TCGA.BATCH)))
+  if(is.null(magetab.version)){
+    magetab.version = new.version
+  }
   lvl = c("aux", "mage-tab")
   if(1 %in% lvls) lvl = c(lvl, "Level_1")
   if(2 %in% lvls) lvl = c(lvl, "Level_2")
   if(3 %in% lvls) lvl = c(lvl, "Level_3")
   #if(all(c(1:3) %in% lvls)) lvl = c("aux" , lvl)
   message('Creating archive directories...')
-  dirs = makeArchiveDirs(map, version=new.version, base=base, lvls=lvl, platform=platform)
+  dirs = makeArchiveDirs(map, version=new.version, base=base, magetab.version, lvls=lvl, platform=platform)
   writeTidyHistory(x, filepath=dirs$aux)
   message('Writing level 2 and level 3 data...')
   if(METHYLUMISET==TRUE) {
@@ -296,7 +299,7 @@ buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform
     }
   }
   message('Writing mage-tab IDF and SDRF files...')
-  mageTab(map, old.version=old.version, new.version=new.version, base=base, platform=platform, lvls=lvls)
+  mageTab(map, old.version=old.version, new.version=new.version, base=base, magetab.version=magetab.version, platform=platform, lvls=lvls)
   #message('Packaging and signing each directory...')
   #packageAndSign(x, base=base, version=new.version, platform=platform) 
   #message('Validating the data archives...')

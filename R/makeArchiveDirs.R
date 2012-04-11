@@ -1,4 +1,4 @@
-makeArchiveDirs <- function(map, version='0', base=NULL, lvls=c('aux','Level_1','Level_2','Level_3','mage-tab'), platform='HumanMethylation450') 
+makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, lvls=c('aux','Level_1','Level_2','Level_3','mage-tab'), platform='HumanMethylation450') 
 { # {{{
 
   METHYLUMISET = FALSE
@@ -26,6 +26,9 @@ makeArchiveDirs <- function(map, version='0', base=NULL, lvls=c('aux','Level_1',
       base = paste( Sys.getenv('HOME'), 'meth450k', sep='/' ) # default
     }
   } # }}}
+  if(is.null(magetab.version)){
+    magetab.version = version
+  }
   disease = unique(map$diseaseabr)
   dirs$disease = paste(base, 'raw', disease, sep='/')
   dirs$mappings = paste(base, 'mappings.aux', sep='/')
@@ -99,7 +102,7 @@ makeArchiveDirs <- function(map, version='0', base=NULL, lvls=c('aux','Level_1',
   if('mage-tab' %in% lvls) { # {{{
     dirs$magetab = paste(pkged, 
                          paste(diseasestub, platform, 'mage-tab', '1', 
-                               version, '0', sep='.'), sep='/')
+                               magetab.version, '0', sep='.'), sep='/')
     dir.create(dirs$magetab)
     system(paste('touch ', dirs$magetab, '.tar.gz', sep=''))
     lvls = lvls[-which(names(lvls)=='mage-tab')]

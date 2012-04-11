@@ -295,7 +295,7 @@ buildSDRF <- function(x, old.version='0', new.version='0', platform='HumanMethyl
 
 } # }}}
 
-mageTab <- function(map, old.version='0', new.version='0', base=NULL, platform='HumanMethylation450', lvls=c(1:3))
+mageTab <- function(map, old.version='0', new.version='0', base=NULL, magetab.version=NULL, platform='HumanMethylation450', lvls=c(1:3))
 { # {{{
   if(is(map, 'MethyLumiSet')) { # {{{
     x <- map
@@ -312,10 +312,13 @@ mageTab <- function(map, old.version='0', new.version='0', base=NULL, platform='
   }
   stopifnot(length(disease) == 1)
   platform.dir = ifelse(platform=='HumanMethylation450', 'meth450k', 'meth27k')
+  if(is.null(magetab.version)){
+    magetab.version = new.version
+  }
   archive.dir = paste(Sys.getenv('HOME'), platform.dir, 'tcga', disease,
                       paste("version", new.version, sep=""), 
                       paste(paste( 'jhu-usc.edu', disease, sep='_'), platform,
-                            'mage-tab', BID, new.version, '0', sep='.'), sep='/')
+                            'mage-tab', BID, magetab.version, '0', sep='.'), sep='/')
   if(!('BATCH.ID' %in% names(map))) { # {{{
     stopifnot('TCGA.BATCH' %in% names(map))
     map$BATCH.ID = as.numeric(as.factor(map$TCGA.BATCH))
