@@ -36,9 +36,10 @@ mapBatches <- function(xls.files, parallel=FALSE, link.raw=FALSE)
   } else { 
     map = do.call(rbind, lapply(xls.files, canonicalizeExcelFile, check=F))
   }
-  map$BATCH.ID = as.numeric(as.factor(map$TCGA.BATCH))
   if(link.raw == TRUE) linkRawData(map, unlink.old.files=FALSE)
-  return(canonicalizeMapping(map))
+  map <- canonicalizeMapping(map)
+  map$BATCH.ID = as.numeric(as.factor(map$TCGA.BATCH))
+  return(map)
 } # }}}
 
 ## e.g. runBatchByName(map.UCEC,'137') is the same as runBatchByID(map.UCEC,10)
@@ -296,11 +297,11 @@ buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform
   }
   message('Writing mage-tab IDF and SDRF files...')
   mageTab(map, old.version=old.version, new.version=new.version, base=base, platform=platform, lvls=lvls)
-  message('Packaging and signing each directory...')
-  packageAndSign(map, base=base, version=new.version, platform=platform) 
-  message('Validating the data archives...')
-  validateArchive(map, base=base, version=new.version, platform=platform)
-  message('If validation passed without errors, validate again on epigraph without -noremote, then SFTP.')
+  #message('Packaging and signing each directory...')
+  #packageAndSign(x, base=base, version=new.version, platform=platform) 
+  #message('Validating the data archives...')
+  #validateArchive(x, base=base, version=new.version, platform=platform)
+  #message('If validation passed without errors, validate again on epigraph without -noremote, then SFTP.')
   # packageAndSign(map, base=base, platform=platform) 
 } # }}}
 
