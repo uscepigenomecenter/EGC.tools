@@ -1,13 +1,13 @@
 Package: EGC.tools
 Type: Package
 Title: XLS mapping, TCGA packaging, one-off routines, etc. for USC EGC tasks
-Version: 1.3.0
+Version: 1.3.1
 Date: 2012-04-11
 Author: Tim Triche, Jr., Moiz Bootwalla
 Maintainer: Moiz Bootwalla <bootwall@usc.edu>
 Description: Bead mapping, subsetting, and packaging functions (TCGA and other)
-Imports: methylumi, matrixStats, Biobase, methods
-Depends: IlluminaHumanMethylation450kprobe, methylumi
-Suggests: ggplot2, lumi, RCurl, xlsx, parallel, GenomicRanges, GenomicFeatures
+Imports: methylumi, matrixStats, Biobase, methods, GenomicRanges
+Depends: IlluminaHumanMethylation450kprobe, methylumi, GenomicRanges
+Suggests: ggplot2, lumi, RCurl, xlsx, parallel, GenomicFeatures
 License: AGPL-3
 LazyLoad: yes

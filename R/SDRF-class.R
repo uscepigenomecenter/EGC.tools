@@ -39,7 +39,11 @@ setClass("tcgaLevel3",
 
 
 setClass("SDRF", contains=c("tcgaExtract","tcgaLevel1", "tcgaLevel2", "tcgaLevel3"),
-	 representation(headers="character"))
+	 representation(headers="character",
+			sdrf.name="character",
+			disease="character",
+			platform="character",
+			version="character"))
 
 SDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation450'){
 	if(is(x, 'MethyLumiSet')) {
@@ -194,6 +198,10 @@ SDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation
 
 	sdrf <- new("SDRF",
 		    headers=headers,
+		    sdrf.name=sdrf.name,
+		    disease=disease,
+		    platform=platform,
+		    version=new.version,
 		    extract,
 		    level1,
 		    level2,
@@ -202,11 +210,38 @@ SDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation
 
 setMethod("show", signature(object="SDRF"),
 	  function(object){
-		  cat(class(object), "\n", sep="")
-		  callNextMethod()
+		  cat(class(object), "\n")
+		  n <- length(object@name) / 2
+		  cat("No. of samples :", n, "\n", sep=" ")
+		  cat("Tumor type :", object@disease, "\n", sep=" ")
+		  cat("Platform :", object@platform, "\n", sep=" ")
+		  cat("Data Type :", "DNA Methylation", "\n", sep=" ")
+		  cat("Data Levels :", "1,2,3", "\n", sep=" ")
+		  cat("MageTab version :", object@version, "\n", sep=" ")
 	  })
 
+setGeneric("getExtract", function(object) standardGeneric("getExtract"))
 setGeneric("getLevel1", function(object) standardGeneric("getLevel1"))
+setGeneric("getLevel2", function(object) standardGeneric("getLevel2"))
+setGeneric("getLevel3", function(object) standardGeneric("getLevel3"))
+
+setMethod("getExtract", signature(object="SDRF"),
+	  function(object){
+		  slots <- slotNames("tcgaExtract")
+		  #v <- paste("object", slots, sep="@")
+		  extract <- data.frame(object@name,
+					as.character(object@protocol.label),
+					object@name.label,
+					object@label,
+					as.character(object@term.source.mged),
+					as.character(object@protocol.hybridize),
+					object@name.hybridize,
+					as.character(object@array.ref),
+					as.character(object@term.source),
+					as.character(object@protocol.image))
+		  colnames(extract) <- slots
+		  return(extract)
+	  })
 
 setMethod("getLevel1", signature(object="SDRF"),
 	  function(object){
@@ -221,4 +256,34 @@ setMethod("getLevel1", signature(object="SDRF"),
 				       as.character(object@include.l1))
 		  colnames(level1) <- slots
 		  return(level1)
+	  })
+
+setMethod("getLevel2", signature(object="SDRF"),
+	  function(object){
+		  slots <- slotNames("tcgaLevel2")
+		  #v <- paste("object", slots, sep="@")
+		  level2 <- data.frame(as.character(object@protocol.norm),
+				       object@name.norm,
+				       object@data.matrix.file.l2,
+				       as.character(object@name.archive.l2),
+				       as.character(object@data.type.l2),
+				       as.character(object@data.level.l2),
+				       as.character(object@include.l2))
+		  colnames(level2) <- slots
+		  return(level2)
+	  })
+
+setMethod("getLevel3", signature(object="SDRF"),
+	  function(object){
+		  slots <- slotNames("tcgaLevel3")
+		  #v <- paste("object", slots, sep="@")
+		  level3 <- data.frame(as.character(object@protocol.mask),
+				       object@name.mask,
+				       object@data.matrix.file.l3,
+				       as.character(object@name.archive.l3),
+				       as.character(object@data.type.l3),
+				       as.character(object@data.level.l3),
+				       as.character(object@include.l3))
+		  colnames(level3) <- slots
+		  return(level3)
 	  })
