@@ -297,7 +297,7 @@ buildIDF <- function(x, version='0', platform='HumanMethylation450')
 
 buildSDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation450')
 {
-	sdrf <- SDRF(x, old.version=old.version, new.version=new.version, platform=paltform)
+	sdrf <- SDRF(x, old.version=old.version, new.version=new.version, platform=platform)
 	sdrf.name <- sdrf@sdrf.name
 	headers <- sdrf@headers
 	cat(paste(headers, collapse="\t"), "\n", sep='', file=sdrf.name)
@@ -338,7 +338,7 @@ mageTab <- function(map, old.version='0', new.version='0', base=NULL, magetab.ve
   setwd(archive.dir)
   addDescription(map, platform=platform)
   buildIDF(map, version=new.version, platform=platform)
-  buildSDRF(map, old.version=old.version, new.version=new.version, platform=platform, lvls=lvls)
+  buildSDRF(map, old.version=old.version, new.version=new.version, platform=platform)
   setwd(oldwd)
 } # }}} 
 
