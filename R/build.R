@@ -27,6 +27,10 @@ loadMap <- function(disease, base=NULL, platform='HumanMethylation450')
   return(map)
 } # }}}
 
+loadMap <- function(disease, platform="HumanMethylation450"){
+	require("RMySQL")
+}
+
 ## process a tumor's worth of Excel files from Dan
 mapBatches <- function(xls.files, parallel=FALSE, link.raw=FALSE) 
 { # {{{
