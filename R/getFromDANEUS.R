@@ -11,10 +11,10 @@ insertDisease <- function(con=NULL, disease){
 	require("RMySQL")
 	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
 	query <- paste("INSERT INTO DISEASE (name) VALUES ('", disease, "')", sep="")
-	suppressWarnings(dbSendQuery(con, query))
-	err <- dbGetException(con)
-	if(err$errorNum != 0){
-		message(paste("Inserting", disease, "into database cause the following error:", err$errorNum, err$errorMsg, sep=" "))
+	t <- tryCatch(dbSendQuery(con, query), error = function(e) return(TRUE))
+	if(is(t, "logical")){
+		err <- dbGetException(con)
+		message(paste("Inserting", disease, "into database caused the following error:", err$errorNum, err$errorMsg, sep=" "))
 		return(FALSE)
 	} else {
 		message(paste("Inserted", disease, "successfully into database", sep=" "))
@@ -53,10 +53,10 @@ insertTissue <- function(con=NULL, tissue){
 	require("RMySQL")
 	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
 	query <- paste("INSERT INTO TISSUE (name) VALUES ('", tissue, "')", sep="")
-	suppressWarnings(dbSendQuery(con, query))
-	err <- dbGetException(con)
-	if(err$errorNum != 0){
-		message(paste("Inserting", tissue, "into database cause the following error:", err$errorNum, err$errorMsg, sep=" "))
+	t <- tryCatch(dbSendQuery(con, query), error = function(e) return(TRUE))
+	if(is(t, "logical")){
+		err <- dbGetException(con)
+		message(paste("Inserting", tissue, "into database caused the following error:", err$errorNum, err$errorMsg, sep=" "))
 		return(FALSE)
 	} else {
 		message(paste("Inserted", tissue, "successfully into database", sep=" "))
