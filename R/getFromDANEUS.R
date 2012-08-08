@@ -133,3 +133,50 @@ mapHistology <- function(con=NULL, mappings){
 	return(histology.id)
 }
 
+getBatch <- function(con=NULL, tissue, disease){
+	require("RMySQL")
+	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
+	query <- paste("SELECT * FROM BATCH WHERE tissue IN ('", paste(tissue, collapse="','"), "') AND disease IN ('", paste(disease, collapse="','"), "')", sep="")
+	batch <- dbGetQuery(con, query)
+	return(batch)
+}
+
+insertBatch <- function(con=NULL, batch){
+	require("RMySQL")
+	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
+	query <- paste("INSERT INTO BATCH (name, tissue, disease) VALUES ", batch, sep="")
+	t <- tryCatch(dbSendQuery(con, query), error = function(e) return(TRUE))
+	if(is(t, "logical")){
+		err <- dbGetException(con)
+		message(paste("Inserting", batch, "into database caused the following error:", err$errorNum, err$errorMsg, sep=" "))
+		return(FALSE)
+	} else {
+		message(paste("Inserted", batch, "successfully into database", sep=" "))
+		return(TRUE)
+	}
+}
+
+mapBatch <- function(con=NULL, mappings){
+	require("RMySQL")
+	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
+	stopifnot(c("BATCH.ID", "diseaseabr", "TCGA.BATCH") %in% colnames(mappings))
+	disease <- mapDisease(con, mappings$diseaseabr)
+	batch <- data.frame("batch" = mappings$batch, tissue, disease, stringsAsFactors=F)
+	batch.db <- getBatch(con, tissue, disease)
+	batch.str <- apply(batch, 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+	batch.db.str <- apply(batch.db[ , c("name", "tissue", "disease")], 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+	map <- match(batch.str, batch.db.str)
+	if(any(is.na(map))){
+		new.batch <- unique(batch.str[which(is.na(map))])
+		new.batch <- ifelse(length(new.batch) > 1, paste(new.batch, collapse=","), new.batch)
+		message(paste("Inserting", new.batch, "into the BATCH Table", sep=" "))
+		if(insertBatch(con, new.batch)){
+			batch.db <- getBatch(con)
+			map <- match(batch, batch.db[, "name"])
+		} else {
+			stop(paste("There was an error inserting", new.batch, "into the database", sep=" "))
+		}
+	}
+	batch.id <- batch.db[, "id"][map]
+	return(batch.id)
+}

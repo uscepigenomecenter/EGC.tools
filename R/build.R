@@ -6,29 +6,47 @@
 ## Level 3: SNP10/pval-masked beta values with symbols, chrom.hg18, coord.hg18
 
 ## load and canonicalize
-loadMap <- function(disease, base=NULL, platform='HumanMethylation450') 
-{ # {{{ 
-  oldwd = getwd()
-  if(is.null(base)) { # {{{
-    message('Assuming symlinks $HOME/meth27k and $HOME/meth450k both exist...')
-    if(platform == 'HumanMethylation27') {
-      base = paste( Sys.getenv('HOME'), 'meth27k', sep='/' ) # default
-    } else { 
-      base = paste( Sys.getenv('HOME'), 'meth450k', sep='/' ) # default
-    }
-  } # }}}
-  setwd( paste(base, 'mappings.aux', sep='/') )
-  map = read.csv( paste(disease, 'mappings', 'csv', sep='.'), 
-                  stringsAsFactors=F,
-                  row.names=1)
-  map = canonicalizeMapping(map)
-  map$BATCH.ID = as.character(as.numeric(as.factor(map$TCGA.BATCH)))
-  setwd(oldwd)
-  return(map)
-} # }}}
+#loadMap <- function(disease, base=NULL, platform='HumanMethylation450') 
+#{ # {{{ 
+#  oldwd = getwd()
+#  if(is.null(base)) { # {{{
+#    message('Assuming symlinks $HOME/meth27k and $HOME/meth450k both exist...')
+#    if(platform == 'HumanMethylation27') {
+#      base = paste( Sys.getenv('HOME'), 'meth27k', sep='/' ) # default
+#    } else { 
+#      base = paste( Sys.getenv('HOME'), 'meth450k', sep='/' ) # default
+#    }
+#  } # }}}
+#  setwd( paste(base, 'mappings.aux', sep='/') )
+#  map = read.csv( paste(disease, 'mappings', 'csv', sep='.'), 
+#                  stringsAsFactors=F,
+#                  row.names=1)
+#  map = canonicalizeMapping(map)
+#  map$BATCH.ID = as.character(as.numeric(as.factor(map$TCGA.BATCH)))
+#  setwd(oldwd)
+#  return(map)
+#} # }}}
 
-loadMap <- function(disease, platform="HumanMethylation450"){
+loadMap <- function(con, disease, platform="HumanMethylation450"){
 	require("RMySQL")
+	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
+	query <- paste("SELECT s.barcode, s.uuid, s.samplename AS 'TCGA.ID', b.batch AS 'TCGA.BATCH', b.ordering AS 'BATCH.ID', h.name AS histology, t.name AS tissue, d.name AS diseaseabr FROM SAMPLE s INNER JOIN BATCH b ON b.id = s.batch INNER JOIN HISTOLOGY h ON h.id = s.histology INNER JOIN DISEASE d ON d.id = h.disease INNER JOIN TISSUE t ON t.id = h.tissue INNER JOIN STATUS st ON st.id = s.status INNER JOIN PLATFORM p WHERE d.name LIKE '%", disease, "%' AND st.id = 4 AND p.name = '", platform, "'", sep="")
+	map <- dbGetQuery(con, query)
+	cntl.index <- grep("-", map$diseaseabr, fixed=TRUE)
+	cntl <- strsplit(map$diseaseabr[cntl.index], "-")
+	cntl.disease.pos <- lapply(cntl, function(x){which(!is.na(match(x, disease)))})
+	cntl <- strsplit(map$TCGA.BATCH[cntl.index], "-")
+	cntl.batch <- list()
+	for(i in seq_along(cntl)){
+		cntl.batch[[i]] <- cntl[[i]][cntl.disease.pos[[i]]]
+	}
+	cntl.batch <- unlist(cntl.batch, use.names=F)
+	map$TCGA.BATCH[cntl.index] <- cntl.batch
+	map$diseaseabr[cntl.index] <- disease
+	query <- paste("SELECT batch, ordering FROM BATCH WHERE batch IN ('", paste(map$TCGA.BATCH[cntl.index], collapse="','"), "')", sep="")
+	batch.cntl <- dbGetQuery(con, query)
+	map$BATCH.ID[cntl.index] <- batch.cntl[,"ordering"]
+	return(map)
 }
 
 ## process a tumor's worth of Excel files from Dan
