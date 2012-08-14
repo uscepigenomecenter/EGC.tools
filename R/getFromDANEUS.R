@@ -115,28 +115,43 @@ mapHistology <- function(con=NULL, mappings){
 	disease <- mapDisease(con, mappings$diseaseabr)
 	histology <- data.frame("histology" = mappings$histology, tissue, disease, stringsAsFactors=F)
 	histology.db <- getHistology(con, tissue, disease)
-	histology.str <- apply(histology, 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
-	histology.db.str <- apply(histology.db[ , c("name", "tissue", "disease")], 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
-	map <- match(histology.str, histology.db.str)
-	if(any(is.na(map))){
-		new.histology <- unique(histology.str[which(is.na(map))])
+	if(dim(histology.db)[1] == 0){
+		histology.str <- apply(histology, 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+		new.histology <- unique(histology.str)
 		new.histology <- ifelse(length(new.histology) > 1, paste(new.histology, collapse=","), new.histology)
 		message(paste("Inserting", new.histology, "into the HISTOLOGY Table", sep=" "))
 		if(insertHistology(con, new.histology)){
-			histology.db <- getHistology(con)
-			map <- match(histology, histology.db[, "name"])
+			histology.db <- getHistology(con, tissue, disease)
 		} else {
 			stop(paste("There was an error inserting", new.histology, "into the database", sep=" "))
 		}
+		histology.id <- histology.db[, "id"]
+		return(histology.id)
+	} else {
+		histology.str <- apply(histology, 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+		histology.db.str <- apply(histology.db[ , c("name", "tissue", "disease")], 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+		map <- match(histology.str, histology.db.str)
+		if(any(is.na(map))){
+			new.histology <- unique(histology.str[which(is.na(map))])
+			new.histology <- ifelse(length(new.histology) > 1, paste(new.histology, collapse=","), new.histology)
+			message(paste("Inserting", new.histology, "into the HISTOLOGY Table", sep=" "))
+			if(insertHistology(con, new.histology)){
+				histology.db <- getHistology(con, tissue, disease)
+				histology.db.str <- apply(histology.db[ , c("name", "tissue", "disease")], 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+				map <- match(histology.str, histology.db.str)
+			} else {
+				stop(paste("There was an error inserting", new.histology, "into the database", sep=" "))
+			}
+		}
+		histology.id <- histology.db[, "id"][map]
+		return(histology.id)
 	}
-	histology.id <- histology.db[, "id"][map]
-	return(histology.id)
 }
 
-getBatch <- function(con=NULL, tissue, disease){
+getBatch <- function(con=NULL, disease){
 	require("RMySQL")
 	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
-	query <- paste("SELECT * FROM BATCH WHERE tissue IN ('", paste(tissue, collapse="','"), "') AND disease IN ('", paste(disease, collapse="','"), "')", sep="")
+	query <- paste("SELECT * FROM BATCH WHERE disease IN (", disease, ")" , sep="")
 	batch <- dbGetQuery(con, query)
 	return(batch)
 }
@@ -144,7 +159,7 @@ getBatch <- function(con=NULL, tissue, disease){
 insertBatch <- function(con=NULL, batch){
 	require("RMySQL")
 	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
-	query <- paste("INSERT INTO BATCH (name, tissue, disease) VALUES ", batch, sep="")
+	query <- paste("INSERT INTO BATCH (disease, batch, ordering) VALUES ", batch, sep="")
 	t <- tryCatch(dbSendQuery(con, query), error = function(e) return(TRUE))
 	if(is(t, "logical")){
 		err <- dbGetException(con)
@@ -159,24 +174,56 @@ insertBatch <- function(con=NULL, batch){
 mapBatch <- function(con=NULL, mappings){
 	require("RMySQL")
 	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
-	stopifnot(c("BATCH.ID", "diseaseabr", "TCGA.BATCH") %in% colnames(mappings))
+	stopifnot(c("diseaseabr", "TCGA.BATCH") %in% colnames(mappings))
 	disease <- mapDisease(con, mappings$diseaseabr)
-	batch <- data.frame("batch" = mappings$batch, tissue, disease, stringsAsFactors=F)
-	batch.db <- getBatch(con, tissue, disease)
-	batch.str <- apply(batch, 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
-	batch.db.str <- apply(batch.db[ , c("name", "tissue", "disease")], 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
-	map <- match(batch.str, batch.db.str)
-	if(any(is.na(map))){
-		new.batch <- unique(batch.str[which(is.na(map))])
+	batch <- data.frame("disease" = disease, "batch" = mappings$TCGA.BATCH, stringsAsFactors=F)
+	batch.db <- getBatch(con, disease)
+	if(dim(batch.db)[1] == 0){
+		batch$ordering <- as.integer(as.factor(mappings$TCGA.BATCH))
+		batch.str <- apply(batch, 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+		new.batch <- unique(batch.str)
 		new.batch <- ifelse(length(new.batch) > 1, paste(new.batch, collapse=","), new.batch)
 		message(paste("Inserting", new.batch, "into the BATCH Table", sep=" "))
 		if(insertBatch(con, new.batch)){
-			batch.db <- getBatch(con)
-			map <- match(batch, batch.db[, "name"])
+			batch.db <- getBatch(con, disease)
 		} else {
 			stop(paste("There was an error inserting", new.batch, "into the database", sep=" "))
 		}
+		batch.id <- batch.db[, c("id", "ordering")]
+		return(batch.id)
+	} else {
+		batch.str <- apply(batch, 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+		batch.db.str <- apply(batch.db[ , c("disease", "batch")], 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+		map <- match(batch.str, batch.db.str)
+		if(any(is.na(map))){
+			new.batch <- batch[which(is.na(map)), ]
+			ordering <- vector(mode="integer", length(nrow(new.batch)))
+			for(i in 1:nrow(new.batch)){
+				ordering[i] <- ifelse(suppressWarnings(max(batch.db$ordering[batch.db$disease == new.batch$disease[i]])) %in% c(Inf, -Inf), 1, max(batch.db$ordering[batch.db$disease == new.batch$disease[i]]) + 1)
+			}
+			new.batch$ordering <- ordering
+			new.batch <- apply(new.batch, 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+			new.batch <- unique(new.batch)
+			new.batch <- ifelse(length(new.batch) > 1, paste(new.batch, collapse=","), new.batch)
+			message(paste("Inserting", new.batch, "into the BATCH Table", sep=" "))
+			if(insertBatch(con, new.batch)){
+				batch.db <- getBatch(con, disease)
+				batch.db.str <- apply(batch.db[ , c("disease", "batch")], 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+				map <- match(batch.str, batch.db.str)
+			} else {
+				stop(paste("There was an error inserting", new.batch, "into the database", sep=" "))
+			}
+		}
+		batch.id <- batch.db[map, c("id", "ordering")]
+		return(batch.id)
 	}
-	batch.id <- batch.db[, "id"][map]
-	return(batch.id)
+}
+
+insertSample <- function(con=NULL, mappings){
+	require("RMySQL")
+	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
+	histology <- mapHistology(con, mappings)
+	batch <- mapBatch(con, mappings)
+	
+	
 }
