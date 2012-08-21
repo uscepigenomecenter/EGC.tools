@@ -1,5 +1,6 @@
 setClass("tcgaExtract",
 	 representation(name="character",
+			barcode = "character",
 			protocol.label="Rle",
 			name.label="character",
 			label="character",
@@ -49,12 +50,16 @@ SDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation
 	if(is(x, 'MethyLumiSet')) {
 		stopifnot('barcode' %in% varLabels(x))
 		stopifnot('BATCH.ID' %in% varLabels(x))
+		stopifnot('uuid' %in% varLabels(x))
 		subjects = sampleNames(x) = x$TCGA.ID
+		uuid = x$uuid
 		platform = gsub('k$','',gsub('Illumina','',annotation(x)))
 	} else {
 		stopifnot('barcode' %in% names(x))
 		stopifnot('BATCH.ID' %in% names(x))
+		stopifnot('uuid' %in% names(x))
 		subjects = rownames(x) = x$TCGA.ID
+		uuid = x$uuid
 	}
 
 	diseases = levels(as.factor(x$diseaseabr))
@@ -79,7 +84,8 @@ SDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation
 	termsources = c(termsource1='MGED Ontology',
 	                termsource2='caArray')
 
-	headers = c(extract='Extract Name',                         # TCGA ID  {{{
+	headers = c(extract='Extract Name',                         # uuid  {{{
+	            barcode='Comment [TCGA Barcode]',               # TCGA ID
                     protocol1='Protocol REF',                       # labeling
                     labeled='Labeled Extract Name',                 # TCGA ID
                     label='Label',                                  # Cy3 or Cy5
@@ -120,7 +126,8 @@ SDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation
                     datalevel3='Comment [TCGA Data Level]',         # Level 3, duh
                     include3='Comment [TCGA Include for Analysis]') # yes }}}
 
-	name = rep(subjects, each=2)
+	name = rep(uuid, each=2)
+	barcode = rep(subjects, each=2)
 	protocol.label = Rle(paste(domain,'labeling',platform,'01',sep=':'), length(subjects) * 2)
 	#name.label = name
 	label = rep(c('Cy3', 'Cy5'), length(subjects))
@@ -133,6 +140,7 @@ SDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation
 
 	extract <- new("tcgaExtract",
 		       name=name,
+		       barcode=barcode,
 		       protocol.label=protocol.label,
 		       name.label=name,
 		       label=label,

@@ -199,7 +199,8 @@ mapBatch <- function(con=NULL, mappings){
 			new.batch <- batch[which(is.na(map)), ]
 			ordering <- vector(mode="integer", length(nrow(new.batch)))
 			for(i in 1:nrow(new.batch)){
-				ordering[i] <- ifelse(suppressWarnings(max(batch.db$ordering[batch.db$disease == new.batch$disease[i]])) %in% c(Inf, -Inf), 1, max(batch.db$ordering[batch.db$disease == new.batch$disease[i]]) + 1)
+				max.batch <- suppressWarnings(max(batch.db$ordering[batch.db$disease == new.batch$disease[i]]))
+				ordering[i] <- ifelse(max.batch %in% c(Inf, -Inf), 1, max.batch + 1)
 			}
 			new.batch$ordering <- ordering
 			new.batch <- apply(new.batch, 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
@@ -214,16 +215,80 @@ mapBatch <- function(con=NULL, mappings){
 				stop(paste("There was an error inserting", new.batch, "into the database", sep=" "))
 			}
 		}
-		batch.id <- batch.db[map, c("id", "ordering")]
+		batch.id <- batch.db[, "id"][map]
 		return(batch.id)
 	}
 }
 
-insertSample <- function(con=NULL, mappings){
+getStatus <- function(con=NULL, status){
 	require("RMySQL")
 	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
+	query <- paste("SELECT id FROM STATUS WHERE name='", status, "'", sep="")
+	status <- dbGetQuery(con, query)
+	status <- status[, "id"]
+	return(status)
+}
+
+getPlatform <- function(con=NULL, platform){
+	require("RMySQL")
+	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
+	query <- paste("SELECT id FROM PLATFORM WHERE name='", platform, "'", sep="")
+	platform <- dbGetQuery(con, query)
+	platform <- platform[, "id"]
+	return(platform)
+}
+
+getProject <- function(con=NULL, project){
+	require("RMySQL")
+	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
+	query <- paste("SELECT id FROM PROJECT WHERE name='", project, "'", sep="")
+	project <- dbGetQuery(con, query)
+	project <- project[, "id"]
+	return(project)
+}
+
+insertSample <- function(con=NULL, mappings, platform="HumanMethylation450", project="TCGA"){
+	require("RMySQL")
+	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
+	sampleHeaders <- c("barcode", "uuid", "platform", "plate", "well", "samplename", "batch", "histology", "project", "status", "shipped")
+	stopifnot(c("TCGA.ID", "shipped") %in% colnames(mappings) || c("samplename", "shipped") %in% colnames(mappings))
+	if(!("status" %in% colnames(mappings))){
+		message("No status provided. Setting status to 'Nanodrop Pass' by default")
+		status <- "Nanodrop Pass"
+	} else{
+		status <- unique(mappings$status)
+	}
 	histology <- mapHistology(con, mappings)
 	batch <- mapBatch(con, mappings)
-	
-	
+	if("uuid" %in% colnames(mappings)){
+		uuid <- mappings$uuid
+	} else{
+		uuid <- NULL
+	}
+	if("barcode" %in% colnames(mappings)){
+		barcode <- mappings$barcode
+	} else{
+		barcode <- NULL
+	}
+	if("plate" %in% colnames(mappings)){
+		plate <- mappings$plate
+	} else{
+		plate <- NULL
+	}
+	if("well" %in% colnames(mappings)){
+		well <- mappings$well
+	} else{
+		well <- NULL
+	}
+	if("TCGA.ID" %in% colnames(mappings)){
+		samplename <- mappings$TCGA.ID
+	} else{
+		samplename <- mappings$samplename
+	}
+	shipped <- mappings$shipped
+	status <- getStatus(con, status)
+	platform <- getPlatform(con, platform)
+	project <- getProject(con, project)
+	sample <- data.frame(barcode, uuid, platform, plate, well, samplename, batch, histology, project, status, shipped, stringsAsFactors=FALSE)
+	dbWriteTable(con, name="SAMPLE", sample, row.names=F, append=T)
 }
