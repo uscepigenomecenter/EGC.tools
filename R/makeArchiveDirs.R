@@ -38,7 +38,8 @@ makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, l
   setwd(dirs$disease)
   oldwd = getwd()
   names(lvls) = lvls
-  batches = levels(as.factor(map$TCGA.BATCH))
+  #batches = levels(as.factor(map$TCGA.BATCH))
+  batches = levels(as.factor(map$BATCH.ID))
 
   if('aux' %in% lvls) { # {{{
     dirs$aux = paste(pkged, 

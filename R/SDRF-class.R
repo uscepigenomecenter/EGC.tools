@@ -126,8 +126,8 @@ SDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation
                     datalevel3='Comment [TCGA Data Level]',         # Level 3, duh
                     include3='Comment [TCGA Include for Analysis]') # yes }}}
 
-	name = rep(uuid, each=2)
-	barcode = rep(subjects, each=2)
+	barcode = rep(uuid, each=2)
+	name = rep(subjects, each=2)
 	protocol.label = Rle(paste(domain,'labeling',platform,'01',sep=':'), length(subjects) * 2)
 	#name.label = name
 	label = rep(c('Cy3', 'Cy5'), length(subjects))
@@ -139,8 +139,8 @@ SDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation
 	protocol.image = Rle(paste(domain,'image_acquisition',platform,'01',sep=':'), length(subjects) * 2)
 
 	extract <- new("tcgaExtract",
-		       name=name,
-		       barcode=barcode,
+		       name=barcode,
+		       barcode=name,
 		       protocol.label=protocol.label,
 		       name.label=name,
 		       label=label,
@@ -238,6 +238,7 @@ setMethod("getExtract", signature(object="SDRF"),
 		  slots <- slotNames("tcgaExtract")
 		  #v <- paste("object", slots, sep="@")
 		  extract <- data.frame(object@name,
+					object@barcode,
 					as.character(object@protocol.label),
 					object@name.label,
 					object@label,

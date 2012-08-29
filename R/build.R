@@ -33,19 +33,21 @@ loadMap <- function(con, disease, platform="HumanMethylation450"){
 	query <- paste("SELECT s.barcode, s.uuid, s.samplename AS 'TCGA.ID', b.batch AS 'TCGA.BATCH', b.ordering AS 'BATCH.ID', h.name AS histology, t.name AS tissue, d.name AS diseaseabr FROM SAMPLE s INNER JOIN BATCH b ON b.id = s.batch INNER JOIN HISTOLOGY h ON h.id = s.histology INNER JOIN DISEASE d ON d.id = h.disease INNER JOIN TISSUE t ON t.id = h.tissue INNER JOIN STATUS st ON st.id = s.status INNER JOIN PLATFORM p INNER JOIN PROJECT pr WHERE d.name LIKE '%", disease, "%' AND st.id = 4 AND pr.id = 1 AND p.name = '", platform, "'", sep="")
 	map <- dbGetQuery(con, query)
 	cntl.index <- grep("-", map$diseaseabr, fixed=TRUE)
-	cntl <- strsplit(map$diseaseabr[cntl.index], "-")
-	cntl.disease.pos <- lapply(cntl, function(x){which(!is.na(match(x, disease)))})
-	cntl <- strsplit(map$TCGA.BATCH[cntl.index], "-")
-	cntl.batch <- list()
-	for(i in seq_along(cntl)){
-		cntl.batch[[i]] <- cntl[[i]][cntl.disease.pos[[i]]]
+	if(length(cntl.index != 0)){
+		cntl <- strsplit(map$diseaseabr[cntl.index], "-")
+		cntl.disease.pos <- lapply(cntl, function(x){which(!is.na(match(x, disease)))})
+		cntl <- strsplit(map$TCGA.BATCH[cntl.index], "-")
+		cntl.batch <- list()
+		for(i in seq_along(cntl)){
+			cntl.batch[[i]] <- cntl[[i]][cntl.disease.pos[[i]]]
+		}
+		cntl.batch <- unlist(cntl.batch, use.names=F)
+		map$TCGA.BATCH[cntl.index] <- cntl.batch
+		map$diseaseabr[cntl.index] <- disease
+		query <- paste("SELECT batch, ordering FROM BATCH WHERE batch IN ('", paste(map$TCGA.BATCH[cntl.index], collapse="','"), "')", sep="")
+		batch.cntl <- dbGetQuery(con, query)
+		map$BATCH.ID[cntl.index] <- batch.cntl[,"ordering"]
 	}
-	cntl.batch <- unlist(cntl.batch, use.names=F)
-	map$TCGA.BATCH[cntl.index] <- cntl.batch
-	map$diseaseabr[cntl.index] <- disease
-	query <- paste("SELECT batch, ordering FROM BATCH WHERE batch IN ('", paste(map$TCGA.BATCH[cntl.index], collapse="','"), "')", sep="")
-	batch.cntl <- dbGetQuery(con, query)
-	map$BATCH.ID[cntl.index] <- batch.cntl[,"ordering"]
 	return(map)
 }
 
@@ -226,12 +228,18 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
 
     # un-mask all the intensities (add pvals?!?)
     betas(x) <- methylated(x)/total.intensity(x)
-    if( !('SNP10' %in% fvarLabels(x)) ) {
-      data(SNPs) # can upgrade later!
-      fData(x)$SNP10 = 0
-      fData(x)$SNP10[ which(featureNames(x) %in% SNPs) ] = 1
+    #if( !('SNP10' %in% fvarLabels(x)) ) {
+    #  data(SNPs) # can upgrade later!
+    #  fData(x)$SNP10 = 0
+    #  fData(x)$SNP10[ which(featureNames(x) %in% SNPs) ] = 1
+    #}
+    if( !('mask' %in% fvarLabels(x))){
+	    data(probesToMask)
+	    fData(x)$mask = 0
+	    fData(x)$mask[ which(featureNames(x) %in% names(toMask))] = 1
     }
-    betas(x)[ which(fData(x)$SNP10==1), ] = NA
+    #betas(x)[ which(fData(x)$SNP10==1), ] = NA
+    betas(x)[ which(fData(x)$mask==1), ] = NA
     l3headers = c('Composite Element REF','Beta_value',
                   'Gene_Symbol','Chromosome','Genomic_Coordinate')
     additional.columns = l3headers[3:5] # as on the above line
