@@ -242,11 +242,12 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
     betas(x)[ which(fData(x)$mask==1), ] = NA
     l3headers = c('Composite Element REF','Beta_value',
                   'Gene_Symbol','Chromosome','Genomic_Coordinate')
+    #FIXME : Need to merge 27k annotations based on hg19 to level3.symbols.hg19
     additional.columns = l3headers[3:5] # as on the above line
     if(!all(additional.columns %in% fvarLabels(x))) { # {{{
-      data(level3.symbols) # merged from 450k and 27k manifests
+      data(level3.symbols.hg19) # merged from 450k and 27k manifests
       missing.cols = setdiff(additional.columns, fvarLabels(x))
-      fData(x) <- cbind(fData(x), level3.symbols[featureNames(x), missing.cols])
+      fData(x) <- cbind(fData(x), level3.symbols.hg19[featureNames(x), missing.cols])
     } # }}}
   
     # reduce code duplication between serial & parallel 
