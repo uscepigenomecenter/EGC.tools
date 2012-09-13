@@ -189,7 +189,7 @@ mapBatch <- function(con=NULL, mappings){
 		} else {
 			stop(paste("There was an error inserting", new.batch, "into the database", sep=" "))
 		}
-		batch.id <- batch.db[, c("id", "ordering")]
+		batch.id <- batch.db[, "id"]
 		return(batch.id)
 	} else {
 		batch$ordering <- as.integer(as.factor(mappings$TCGA.BATCH)) + max(batch.db$ordering)
