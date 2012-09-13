@@ -36,7 +36,8 @@ setClass("tcgaLevel3",
 			name.archive.l3="Rle",
 			data.type.l3="Rle",
 			data.level.l3="Rle",
-			include.l3="Rle"))
+			include.l3="Rle",
+			genome="Rle"))
 
 
 setClass("SDRF", contains=c("tcgaExtract","tcgaLevel1", "tcgaLevel2", "tcgaLevel3"),
@@ -124,7 +125,8 @@ SDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation
                     archive3='Comment [TCGA Archive Name]',         # which batch
                     datatype3='Comment [TCGA Data Type]',           # Methylation
                     datalevel3='Comment [TCGA Data Level]',         # Level 3, duh
-                    include3='Comment [TCGA Include for Analysis]') # yes }}}
+                    include3='Comment [TCGA Include for Analysis]', # yes }}}
+	            genome.ref='Comment [Genome reference]')        # reference genome
 
 	barcode = rep(uuid, each=2)
 	name = rep(subjects, each=2)
@@ -194,6 +196,7 @@ SDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation
 	name.archive.l3 = paste(prepreamble,'Level_3',batch,new.version,'0',sep='.')
 	name.archive.l3 = as(name.archive.l3, "Rle")
 	data.level.l3 = Rle('Level 3', length(subjects) * 2)
+	genome = Rle('HG19', length(subjects) * 2)
 
 	level3 <- new("tcgaLevel3",
 		      protocol.mask=protocol.mask,
@@ -202,7 +205,8 @@ SDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation
 		      name.archive.l3=name.archive.l3,
 		      data.type.l3=data.type,
 		      data.level.l3=data.level.l3,
-		      include.l3=include)
+		      include.l3=include,
+		      genome=genome)
 
 	sdrf <- new("SDRF",
 		    headers=headers,
@@ -292,7 +296,8 @@ setMethod("getLevel3", signature(object="SDRF"),
 				       as.character(object@name.archive.l3),
 				       as.character(object@data.type.l3),
 				       as.character(object@data.level.l3),
-				       as.character(object@include.l3))
+				       as.character(object@include.l3),
+				       as.character(object@genome))
 		  colnames(level3) <- slots
 		  return(level3)
 	  })

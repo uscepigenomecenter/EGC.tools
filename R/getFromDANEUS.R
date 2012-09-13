@@ -193,7 +193,7 @@ mapBatch <- function(con=NULL, mappings){
 		return(batch.id)
 	} else {
 		batch$ordering <- as.integer(as.factor(mappings$TCGA.BATCH)) + max(batch.db$ordering)
-		batch.str <- apply(batch, 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+		batch.str <- apply(batch[, c("disease", "batch")], 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
 		batch.db.str <- apply(batch.db[ , c("disease", "batch")], 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
 		map <- match(batch.str, batch.db.str)
 		if(any(is.na(map))){
