@@ -192,17 +192,18 @@ mapBatch <- function(con=NULL, mappings){
 		batch.id <- batch.db[, c("id", "ordering")]
 		return(batch.id)
 	} else {
+		batch$ordering <- as.integer(as.factor(mappings$TCGA.BATCH)) + max(batch.db$ordering)
 		batch.str <- apply(batch, 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
 		batch.db.str <- apply(batch.db[ , c("disease", "batch")], 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
 		map <- match(batch.str, batch.db.str)
 		if(any(is.na(map))){
 			new.batch <- batch[which(is.na(map)), ]
-			ordering <- vector(mode="integer", length(nrow(new.batch)))
-			for(i in 1:nrow(new.batch)){
-				max.batch <- suppressWarnings(max(batch.db$ordering[batch.db$disease == new.batch$disease[i]]))
-				ordering[i] <- ifelse(max.batch %in% c(Inf, -Inf), 1, max.batch + 1)
-			}
-			new.batch$ordering <- ordering
+			#ordering <- vector(mode="integer", length(nrow(new.batch)))
+			#for(i in 1:nrow(new.batch)){
+			#	max.batch <- suppressWarnings(max(batch.db$ordering[batch.db$disease == new.batch$disease[i]]))
+			#	ordering[i] <- ifelse(max.batch %in% c(Inf, -Inf), 1, max.batch + 1)
+			#}
+			#new.batch$ordering <- ordering
 			new.batch <- apply(new.batch, 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
 			new.batch <- unique(new.batch)
 			new.batch <- ifelse(length(new.batch) > 1, paste(new.batch, collapse=","), new.batch)
