@@ -33,20 +33,24 @@ loadMap <- function(con, disease, platform="HumanMethylation450"){
 	query <- paste("SELECT s.barcode, s.uuid, s.samplename AS 'TCGA.ID', b.batch AS 'TCGA.BATCH', b.ordering AS 'BATCH.ID', h.name AS histology, t.name AS tissue, d.name AS diseaseabr FROM SAMPLE s INNER JOIN BATCH b ON b.id = s.batch INNER JOIN HISTOLOGY h ON h.id = s.histology INNER JOIN DISEASE d ON d.id = h.disease INNER JOIN TISSUE t ON t.id = h.tissue INNER JOIN STATUS st ON st.id = s.status INNER JOIN PLATFORM p INNER JOIN PROJECT pr WHERE d.name LIKE '%", disease, "%' AND st.id = 4 AND pr.id = 1 AND p.name = '", platform, "'", sep="")
 	map <- dbGetQuery(con, query)
 	cntl.index <- grep("-", map$diseaseabr, fixed=TRUE)
+	tmp <- map[-cntl.index, ]
 	if(length(cntl.index != 0)){
 		cntl <- strsplit(map$diseaseabr[cntl.index], "-")
 		cntl.disease.pos <- lapply(cntl, function(x){which(!is.na(match(x, disease)))})
 		cntl <- strsplit(map$TCGA.BATCH[cntl.index], "-")
 		cntl.batch <- list()
+		cntl.ordering <- list()
 		for(i in seq_along(cntl)){
 			cntl.batch[[i]] <- cntl[[i]][cntl.disease.pos[[i]]]
+			cntl.ordering[[i]] <- unique(tmp$BATCH.ID[which(tmp$TCGA.BATCH == cntl.batch[[i]])])
 		}
 		cntl.batch <- unlist(cntl.batch, use.names=F)
+		cntl.ordering <- unlist(cntl.ordering, use.names=F)
 		map$TCGA.BATCH[cntl.index] <- cntl.batch
 		map$diseaseabr[cntl.index] <- disease
-		query <- paste("SELECT batch, ordering FROM BATCH WHERE batch IN ('", paste(map$TCGA.BATCH[cntl.index], collapse="','"), "')", sep="")
-		batch.cntl <- dbGetQuery(con, query)
-		map$BATCH.ID[cntl.index] <- batch.cntl[,"ordering"]
+		#query <- paste("SELECT batch, ordering FROM BATCH WHERE batch IN ('", paste(map$TCGA.BATCH[cntl.index], collapse="','"), "')", sep="")
+		#batch.cntl <- dbGetQuery(con, query)
+		map$BATCH.ID[cntl.index] <- cntl.ordering
 	}
 	return(map)
 }
