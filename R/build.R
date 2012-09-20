@@ -262,7 +262,7 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
       lvl3data = data.frame(Beta=betas(x)[,xs], 
                             Gene_Symbol=fData(x)[,'Gene_Symbol'],
                             Chromosome=fData(x)[,'Chromosome'],
-                            Genomic_Coordinate=fData(x)[,'Genomic_Coordinate'],
+                            Genomic_Coordinate=as.integer(fData(x)[,'Genomic_Coordinate']),
                             Pval=pvals(x)[,xs])
       rownames(lvl3data) = featureNames(x)
       lvl3data[ which(lvl3data$Pval > 0.05), 'Beta' ] <- NA
