@@ -30,7 +30,7 @@
 loadMap <- function(con, disease, platform="HumanMethylation450"){
 	require("RMySQL")
 	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
-	query <- paste("SELECT s.barcode, s.uuid, s.samplename AS 'TCGA.ID', b.batch AS 'TCGA.BATCH', b.ordering AS 'BATCH.ID', h.name AS histology, t.name AS tissue, d.name AS diseaseabr FROM SAMPLE s INNER JOIN BATCH b ON b.id = s.batch INNER JOIN HISTOLOGY h ON h.id = s.histology INNER JOIN DISEASE d ON d.id = h.disease INNER JOIN TISSUE t ON t.id = h.tissue INNER JOIN STATUS st ON st.id = s.status INNER JOIN PLATFORM p INNER JOIN PROJECT pr WHERE d.name LIKE '%", disease, "%' AND st.id = 4 AND pr.id = 1 AND p.name = '", platform, "'", sep="")
+	query <- paste("SELECT s.barcode, LOWER(s.uuid) AS uuid, s.samplename AS 'TCGA.ID', b.batch AS 'TCGA.BATCH', b.ordering AS 'BATCH.ID', h.name AS histology, t.name AS tissue, d.name AS diseaseabr FROM SAMPLE s INNER JOIN BATCH b ON b.id = s.batch INNER JOIN HISTOLOGY h ON h.id = s.histology INNER JOIN DISEASE d ON d.id = h.disease INNER JOIN TISSUE t ON t.id = h.tissue INNER JOIN STATUS st ON st.id = s.status INNER JOIN PLATFORM p INNER JOIN PROJECT pr WHERE d.name LIKE '%", disease, "%' AND st.id = 4 AND pr.id = 1 AND p.name = '", platform, "'", sep="")
 	map <- dbGetQuery(con, query)
 	cntl.index <- grep("-", map$diseaseabr, fixed=TRUE)
 	tmp <- map[-cntl.index, ]
