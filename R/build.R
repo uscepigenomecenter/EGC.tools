@@ -311,7 +311,12 @@ buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform
     map$BATCH.ID = as.numeric(as.factor(map$TCGA.BATCH))
   } # }}}
   stopifnot('diseaseabr' %in% names(map))
-  bs = seq_along(levels(as.factor(map$TCGA.BATCH)))
+  ## FIXME: accomodate differing logic for LAML 450k vs. 27k
+  if('BATCH.ID' %in% names(map) && length(levels(as.factor(map$BATCH.ID)))==1){
+    bs = unique(map$BATCH.ID)
+  } else {
+    bs = seq_along(levels(as.factor(map$TCGA.BATCH)))
+  }
   if(is.null(magetab.version)){
     magetab.version = new.version
   }

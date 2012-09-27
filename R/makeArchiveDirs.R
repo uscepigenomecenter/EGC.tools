@@ -42,8 +42,14 @@ makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, l
   batches = levels(as.factor(map$BATCH.ID))
 
   if('aux' %in% lvls) { # {{{
+    ##  Accomodate differing logic for LAML 450k vs. 27k
+    if('BATCH.ID' %in% names(map) && length(levels(as.factor(map$BATCH.ID)))==1){
+      BID = unique(map$BATCH.ID)
+    } else {
+      BID = 1 
+    }
     dirs$aux = paste(pkged, 
-                     paste(diseasestub, platform, 'aux', '1', 
+                     paste(diseasestub, platform, 'aux', BID, 
                            version, '0', sep='.'),  sep='/')
     oldwd = getwd()
     dir.create(dirs$aux)
@@ -101,8 +107,14 @@ makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, l
     if(METHYLUMISET) level3(x, version=version)
   } # }}}
   if('mage-tab' %in% lvls) { # {{{
+    ##  Accomodate differing logic for LAML 450k vs. 27k
+    if('BATCH.ID' %in% names(map) && length(levels(as.factor(map$BATCH.ID)))==1){
+      BID = unique(map$BATCH.ID)
+    } else {
+      BID = 1 
+    }
     dirs$magetab = paste(pkged, 
-                         paste(diseasestub, platform, 'mage-tab', '1', 
+                         paste(diseasestub, platform, 'mage-tab', BID, 
                                magetab.version, '0', sep='.'), sep='/')
     dir.create(dirs$magetab)
     system(paste('touch ', dirs$magetab, '.tar.gz', sep=''))
