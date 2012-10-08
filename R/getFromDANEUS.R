@@ -151,6 +151,7 @@ mapHistology <- function(con=NULL, mappings){
 getBatch <- function(con=NULL, disease){
 	require("RMySQL")
 	if(is.null(con)) stop("Please provide a Database connection object: see ?dbConnect")
+	disease <- ifelse(length(disease) > 1, paste(disease, collapse=","), disease)
 	query <- paste("SELECT * FROM BATCH WHERE disease IN (", disease, ")" , sep="")
 	batch <- dbGetQuery(con, query)
 	return(batch)
@@ -181,6 +182,7 @@ mapBatch <- function(con=NULL, mappings){
 	if(dim(batch.db)[1] == 0){
 		batch$ordering <- as.integer(as.factor(mappings$TCGA.BATCH))
 		batch.str <- apply(batch, 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+		batch.str <- gsub("\\s+", "", batch.str, perl=T)
 		new.batch <- unique(batch.str)
 		new.batch <- ifelse(length(new.batch) > 1, paste(new.batch, collapse=","), new.batch)
 		message(paste("Inserting", new.batch, "into the BATCH Table", sep=" "))
@@ -194,7 +196,9 @@ mapBatch <- function(con=NULL, mappings){
 	} else {
 		batch$ordering <- as.integer(as.factor(mappings$TCGA.BATCH)) + max(batch.db$ordering)
 		batch.str <- apply(batch[, c("disease", "batch")], 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+		batch.str <- gsub("\\s+", "", batch.str, perl=T)
 		batch.db.str <- apply(batch.db[ , c("disease", "batch")], 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+		batch.db.str <- gsub("\\s+", "", batch.db.str, perl=T)
 		map <- match(batch.str, batch.db.str)
 		if(any(is.na(map))){
 			new.batch <- batch[which(is.na(map)), ]
@@ -211,6 +215,7 @@ mapBatch <- function(con=NULL, mappings){
 			if(insertBatch(con, new.batch)){
 				batch.db <- getBatch(con, disease)
 				batch.db.str <- apply(batch.db[ , c("disease", "batch")], 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+				batch.db.str <- gsub("\\s+", "", batch.db.str, perl=T)
 				map <- match(batch.str, batch.db.str)
 			} else {
 				stop(paste("There was an error inserting", new.batch, "into the database", sep=" "))

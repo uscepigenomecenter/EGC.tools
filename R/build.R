@@ -296,7 +296,7 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
 } # }}}
 
 ## build aux, level 1, and mage-tab across all batches; levels 2 & 3 by batch
-buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform='HumanMethylation450', magetab.version=NULL, lvls=c(1:3))
+buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform='HumanMethylation450', magetab.version=NULL, write.magetab=TRUE, lvls=c(1:3))
 { # {{{
   METHYLUMISET = FALSE
   if(is(map, 'MethyLumiSet')) { # {{{ METHYLUMISET = TRUE
@@ -312,11 +312,13 @@ buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform
   } # }}}
   stopifnot('diseaseabr' %in% names(map))
   ## FIXME: accomodate differing logic for LAML 450k vs. 27k
-  if('BATCH.ID' %in% names(map) && length(levels(as.factor(map$BATCH.ID)))==1){
-    bs = unique(map$BATCH.ID)
-  } else {
-    bs = seq_along(levels(as.factor(map$TCGA.BATCH)))
-  }
+  #if('BATCH.ID' %in% names(map) && length(levels(as.factor(map$BATCH.ID)))==1){
+  #  bs = unique(map$BATCH.ID)
+  #} else {
+  #  bs = seq_along(levels(as.factor(map$TCGA.BATCH)))
+  #}
+  bs = unique(map$BATCH.ID)
+  bs = bs[order(bs)]
   if(is.null(magetab.version)){
     magetab.version = new.version
   }
@@ -338,8 +340,10 @@ buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform
       runBatchByID(map,b,base=base,platform=platform)
     }
   }
-  message('Writing mage-tab IDF and SDRF files...')
-  mageTab(map, old.version=old.version, new.version=new.version, base=base, magetab.version=magetab.version, platform=platform, lvls=lvls)
+  if(write.magetab){
+    message('Writing mage-tab IDF and SDRF files...')
+    mageTab(map, old.version=old.version, new.version=new.version, base=base, magetab.version=magetab.version, platform=platform, lvls=lvls)
+  }
   #message('Packaging and signing each directory...')
   #packageAndSign(x, base=base, version=new.version, platform=platform) 
   #message('Validating the data archives...')

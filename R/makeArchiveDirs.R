@@ -39,7 +39,7 @@ makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, l
   oldwd = getwd()
   names(lvls) = lvls
   #batches = levels(as.factor(map$TCGA.BATCH))
-  batches = levels(as.factor(map$BATCH.ID))
+  batches = sort(unique(map$BATCH.ID))
 
   if('aux' %in% lvls) { # {{{
     ##  Accomodate differing logic for LAML 450k vs. 27k
@@ -64,7 +64,7 @@ makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, l
   } # }}}
   if('Level_1' %in% lvls) { # {{{
     dirs$level_1 = c()
-    for( i in 1:length(batches) ) {
+    for( i in batches ) {
       batchnum = i
       batchname = batches[i]
       batchmap = map[ which(map$TCGA.BATCH == batchname), ]
@@ -78,7 +78,7 @@ makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, l
   } # }}}
   if('Level_2' %in% lvls) { # {{{
     dirs$level_2 = c()
-    for( i in 1:length(batches) ) {
+    for( i in batches ) {
       batchnum = i
       batchname = batches[i]
       batchmap = map[ which(map$TCGA.BATCH == batchname), ]
@@ -92,7 +92,7 @@ makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, l
   } # }}}
   if('Level_3' %in% lvls) { # {{{
     dirs$level_3 = c()
-    for( i in 1:length(batches) ) {
+    for( i in batches ) {
       batchnum = i
       batchname = batches[i]
       batchmap = map[ which(map$TCGA.BATCH == batchname), ]
