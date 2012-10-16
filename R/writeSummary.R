@@ -47,13 +47,14 @@ plotDensities <- function(object, controls=NULL, label='Replicate betas'){ # {{{
   for(i in seq_along(ds)) lines(ds[[i]])
 } # }}}
 
-runSampleQC <- function(x, filepath='.')
+runSampleQC <- function(x, filepath='.', platform="HumanMethylation450")
 {
 	disease <- unique(x$diseaseabr)[1]
 	pvals <- pvals(x)
 	sample.summary <- getSampleSummary(pvals)
-	if(any(sample.summary > 10000)){
-		sample.summary <- sample.summary[which(sample.summary > 10000)]
+	limit <- ifelse(platform=="HumanMethylation27", 560, 10000)
+	if(any(sample.summary > limit)){
+		sample.summary <- sample.summary[which(sample.summary > limit)]
 		failed <- paste(names(sample.summary), collapse=",")
 		index <- which(x$barcode %in% names(sample.summary))
 		fs <- data.frame("TCGA.ID"=x$TCGA.ID[index], "Barcode"=x$barcode[index], "Histology"=x$histology[index],

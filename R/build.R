@@ -238,7 +238,8 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
     #  fData(x)$SNP10[ which(featureNames(x) %in% SNPs) ] = 1
     #}
     if( !('mask' %in% fvarLabels(x))){
-	    data(probesToMask)
+	    ifelse(platform == 'HumanMethylation27k', data(probesToMask.27k), data(probesToMask))
+	    #data(probesToMask)
 	    fData(x)$mask = 0
 	    fData(x)$mask[ which(featureNames(x) %in% names(toMask))] = 1
     }
