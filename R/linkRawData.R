@@ -17,7 +17,7 @@ verifyDataDirs <- function(map, platform='HumanMethylation450', path='/export/ue
   return(dirs)
 } # }}}
 
-linkRawData <- function(map, unlink.old.files=TRUE, platform='HumanMethylation450', path='/export/uec-gs1/laird/shared/production/methylation', logfile=NULL) 
+linkRawData <- function(map, unlink.old.files=TRUE, platform='HumanMethylation450', path='/export/uec-gs1/laird/shared/production/methylation', logfile=NULL, idatPath=NULL) 
 { # {{{
   diseasedir = verifyDataDirs(map, platform, path)$disease
   oldwd = getwd()
@@ -27,10 +27,12 @@ linkRawData <- function(map, unlink.old.files=TRUE, platform='HumanMethylation45
   platform.path = paste(path, 
                         ifelse(grepl('HumanMethylation450',platform,ignore=T),
                                'meth450k', 'meth27k'), 'raw', sep='/')
-  check <- sapply(substr(map$barcode,1,10), function(x){checkDirs(paste(platform.path, x, sep='/'))})
-  if(!all(check)){
-    failed <- paste(unique(names(check[which(check == FALSE)])), collapse=",")
-    stop(paste("Barcodes", failed, "were not found"))
+  if(is.null(idatPath)){
+    check <- sapply(substr(map$barcode,1,10), function(x){checkDirs(paste(platform.path, x, sep='/'))})
+    if(!all(check)){
+      failed <- paste(unique(names(check[which(check == FALSE)])), collapse=",")
+      stop(paste("Barcodes", failed, "were not found"))
+    }
   }
   if(unlink.old.files==TRUE) unlink(list.files()) # get your old crap outta here
   if(!is.null(logfile)) unlink(logfile)
@@ -40,13 +42,13 @@ linkRawData <- function(map, unlink.old.files=TRUE, platform='HumanMethylation45
     batches = paste('batch', beadchip.batch)
     msg = paste('linking samples from beadchip', beadchip,'(',batches,')')
     if(!is.null(logfile)) cat(msg,"\n",file=logfile,append=T) else message(msg)
-    raw.path = paste('..', beadchip, sep='/')
+    raw.path = ifelse(is.null(idatPath), paste('..', beadchip, sep='/'), idatPath)
     cmd = paste('ln -f ', paste(raw.path, '/', beadchip, '.sdf . 2>&1', sep=''))
     if(!is.null(logfile)) cat('#', cmd, file=logfile, append=T)
     msg = system(command=cmd, intern=TRUE)
     if(!is.null(logfile) & !is.null(msg)) cat(msg,"\n",file=logfile,append=T) 
     for( chip in grep(beadchip, map$barcode, value=T) ) {
-      chip.path = paste(raw.path, chip, sep='/')
+      chip.path = ifelse(is.null(idatPath), paste(raw.path, chip, sep='/'), paste(idatPath, beadchip, sep="/"))
       cmd = paste('ln ', chip.path, '_*.idat . 2>&1', sep='')
       # if(!is.null(logfile)) cat('#', cmd, file=logfile, append=T)
       msg = system(command=cmd, intern=TRUE)

@@ -117,6 +117,7 @@ mapHistology <- function(con=NULL, mappings){
 	histology.db <- getHistology(con, tissue, disease)
 	if(dim(histology.db)[1] == 0){
 		histology.str <- apply(histology, 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+		#histology.str <- gsub("\\s+", "", histology.str, perl=T)
 		new.histology <- unique(histology.str)
 		new.histology <- ifelse(length(new.histology) > 1, paste(new.histology, collapse=","), new.histology)
 		message(paste("Inserting", new.histology, "into the HISTOLOGY Table", sep=" "))
@@ -129,7 +130,9 @@ mapHistology <- function(con=NULL, mappings){
 		return(histology.id)
 	} else {
 		histology.str <- apply(histology, 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+		#histology.str <- gsub("\\s+", "", histology.str, perl=T)
 		histology.db.str <- apply(histology.db[ , c("name", "tissue", "disease")], 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+		#histology.db.str <- gsub("\\s+", "", histology.db.str, perl=T)
 		map <- match(histology.str, histology.db.str)
 		if(any(is.na(map))){
 			new.histology <- unique(histology.str[which(is.na(map))])
@@ -138,6 +141,7 @@ mapHistology <- function(con=NULL, mappings){
 			if(insertHistology(con, new.histology)){
 				histology.db <- getHistology(con, tissue, disease)
 				histology.db.str <- apply(histology.db[ , c("name", "tissue", "disease")], 1, function(x){paste("('", paste(x, collapse="','"), "')", sep="")})
+				#histology.db.str <- gsub("\\s+", "", histology.db.str, perl=T)
 				map <- match(histology.str, histology.db.str)
 			} else {
 				stop(paste("There was an error inserting", new.histology, "into the database", sep=" "))
