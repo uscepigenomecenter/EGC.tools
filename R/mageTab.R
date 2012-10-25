@@ -1,12 +1,12 @@
 ## Adds an Investigation Design Format file for all the batches in an archive.
-buildIDF <- function(x, version='0', platform='HumanMethylation450') 
+buildIDF <- function(x, version='0', magetab.version=magetab.version, platform='HumanMethylation450') 
 { # {{{
   if(is(x, 'MethyLumiSet')) {
     platform = gsub('k$','',gsub('Illumina','',annotation(x)))
   }
   disease = unique(x$diseaseabr)
   stopifnot(length(disease)==1)
-  filenm=paste('jhu-usc.edu_',disease,'.',platform,'.1.',version,'.0.idf.txt',
+  filenm=paste('jhu-usc.edu_',disease,'.',platform,'.1.',magetab.version,'.0.idf.txt',
                sep='')
   sdrfnm=gsub('idf','sdrf',filenm)
 
@@ -297,7 +297,7 @@ buildIDF <- function(x, version='0', platform='HumanMethylation450')
 
 buildSDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation450')
 {
-	sdrf <- SDRF(x, old.version=old.version, new.version=new.version, platform=platform)
+	sdrf <- SDRF(x, old.version=old.version, new.version=new.version, magetab.version=magetab.version, platform=platform)
 	sdrf.name <- sdrf@sdrf.name
 	headers <- sdrf@headers
 	cat(paste(headers, collapse="\t"), "\n", sep='', file=sdrf.name)
@@ -337,8 +337,8 @@ mageTab <- function(map, old.version='0', new.version='0', base=NULL, magetab.ve
   oldwd = getwd()
   setwd(archive.dir)
   addDescription(map, platform=platform)
-  buildIDF(map, version=new.version, platform=platform)
-  buildSDRF(map, old.version=old.version, new.version=new.version, platform=platform)
+  buildIDF(map, version=new.version, magetab.version=magetab.version, platform=platform)
+  buildSDRF(map, old.version=old.version, new.version=new.version, magetab.version=magetab.version, platform=platform)
   setwd(oldwd)
 } # }}} 
 

@@ -47,7 +47,7 @@ setClass("SDRF", contains=c("tcgaExtract","tcgaLevel1", "tcgaLevel2", "tcgaLevel
 			platform="character",
 			version="character"))
 
-SDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation450'){
+SDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platform='HumanMethylation450'){
 	if(is(x, 'MethyLumiSet')) {
 		stopifnot('barcode' %in% varLabels(x))
 		stopifnot('BATCH.ID' %in% varLabels(x))
@@ -69,9 +69,12 @@ SDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation
 	} else {
 		disease = diseases[1]
 	}
+	if(is.null(magetab.version)){
+		magetab.version = new.version
+	}
 	domain = 'jhu-usc.edu'
 	prepreamble =  paste('jhu-usc.edu_',disease,'.',platform,sep='')
-	preamble =  paste(prepreamble,'1',new.version,'0',sep='.')
+	preamble =  paste(prepreamble,'1',magetab.version,'0',sep='.')
 	# <Domain>_<TumorType>.<Platform>.<ArchiveSerialIndex>.sdrf.txt
 	sdrf.name = paste(preamble, 'sdrf','txt',sep='.') # all one big SDRF file
 	array.ref = paste('Illumina.com','PhysicalArrayDesign',platform, sep=':')
@@ -213,7 +216,7 @@ SDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation
 		    sdrf.name=sdrf.name,
 		    disease=disease,
 		    platform=platform,
-		    version=new.version,
+		    version=magetab.version,
 		    extract,
 		    level1,
 		    level2,
