@@ -295,7 +295,7 @@ buildIDF <- function(x, version='0', magetab.version=magetab.version, platform='
 
 #} # }}}
 
-buildSDRF <- function(x, old.version='0', new.version='0', platform='HumanMethylation450')
+buildSDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platform='HumanMethylation450')
 {
 	sdrf <- SDRF(x, old.version=old.version, new.version=new.version, magetab.version=magetab.version, platform=platform)
 	sdrf.name <- sdrf@sdrf.name
@@ -364,10 +364,15 @@ addDescription <- function(x, platform='HumanMethylation450') {
 
 'LEVEL 1: Level 1 data contain raw IDAT files (two per sample) as produced by the iScan system and as mapped by the SDRF and also in the disease mapping file. These files can be directly processed by the `methylumi` or `minfi` R packages; a comma-separated value (CSV) file in the AUX archive is provided to ease this.',
 
-'LEVEL 2: Level 2 data contain background-corrected methylated (M) and unmethylated (U) summary intensities as extracted by the methylumi package.  Non-detection probabilities (P-values) were computed as the minimum of the two values (one per allele) for the empirical cumulative density function of the negative control probes in the appropriate color channel.  Background correction is performed via normal-exponential deconvolution (currently NOT stratified by probe sequence). Multiple-batch archives have the intensities in each of the two channels multiplicatively scaled to match a reference sample (sample with R/G ratio closest to 1.0.)',
+'LEVEL 2: Level 2 data contain background-corrected methylated (M) and unmethylated (U) summary intensities as extracted by the methylumi package.  Non-detection probabilities (P-values) were computed as the minimum of the two values (one per allele) for the empirical cumulative density function of the negative control probes in the appropriate color channel.  Background correction is performed via normal-exponential deconvolution (currently NOT stratified by probe sequence).', sep="\n\n")
 
-'LEVEL 3: Derived summary measures (beta values: M/(M+U) for each interrogated locus) with annotations for gene symbol, chromosome (UCSC hg19, Feb 2009), and CpG/CpH coordinate (UCSC hg19, Feb 2009). Probes having a SNP within 10bp of the interrogated CpG site or having 15bp from the interrogated CpG site overlap with a REPEAT element (as defined by RepeatMasker and Tandem Repeat Finder Masks based on UCSC hg19, Feb 2009) are masked as NA across all samples, and probes with a non-detection probability (P-value) greater than 0.05 in a given sample are masked as NA on that chip. Probes that are mapped to multiple sites on hg19 are annotated as NA for chromosome and 0 for CpG/CpH coordinate',
+  if(platform == 'HumanMethylation450') {
+    level.desc = paste(level.desc,
+    'Multiple-batch archives have the intensities in each of the two channels multiplicatively scaled to match a reference sample (sample with R/G ratio closest to 1.0.)', sep=' ')
+  }
 
-  sep="\n\n")
+  level.desc = paste(level.desc, 
+'LEVEL 3: Derived summary measures (beta values: M/(M+U) for each interrogated locus) with annotations for gene symbol, chromosome (UCSC hg19, Feb 2009), and CpG/CpH coordinate (UCSC hg19, Feb 2009). Probes having a SNP within 10bp of the interrogated CpG site or having 15bp from the interrogated CpG site overlap with a REPEAT element (as defined by RepeatMasker and Tandem Repeat Finder Masks based on UCSC hg19, Feb 2009) are masked as NA across all samples, and probes with a non-detection probability (P-value) greater than 0.05 in a given sample are masked as NA on that chip. Probes that are mapped to multiple sites on hg19 are annotated as NA for chromosome and 0 for CpG/CpH coordinate',sep="\n\n")
+  
   cat(boilerplate, sample.desc, level.desc, file='DESCRIPTION.txt', sep="\n\n")
 } # }}}
