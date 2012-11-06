@@ -295,9 +295,9 @@ buildIDF <- function(x, version='0', magetab.version=magetab.version, platform='
 
 #} # }}}
 
-buildSDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platform='HumanMethylation450')
+buildSDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platform='HumanMethylation450', revision=FALSE)
 {
-	sdrf <- SDRF(x, old.version=old.version, new.version=new.version, magetab.version=magetab.version, platform=platform)
+	sdrf <- SDRF(x, old.version=old.version, new.version=new.version, magetab.version=magetab.version, platform=platform, revision=revision)
 	sdrf.name <- sdrf@sdrf.name
 	headers <- sdrf@headers
 	cat(paste(headers, collapse="\t"), "\n", sep='', file=sdrf.name)
@@ -306,7 +306,7 @@ buildSDRF <- function(x, old.version='0', new.version='0', magetab.version='0', 
 }
 
 
-mageTab <- function(map, old.version='0', new.version='0', base=NULL, magetab.version=NULL, platform='HumanMethylation450', lvls=c(1:3))
+mageTab <- function(map, old.version='0', new.version='0', base=NULL, magetab.version=NULL, platform='HumanMethylation450', lvls=c(1:3), revision=FALSE)
 { # {{{
   if(is(map, 'MethyLumiSet')) { # {{{
     x <- map
@@ -338,7 +338,7 @@ mageTab <- function(map, old.version='0', new.version='0', base=NULL, magetab.ve
   setwd(archive.dir)
   addDescription(map, platform=platform)
   buildIDF(map, version=new.version, magetab.version=magetab.version, platform=platform)
-  buildSDRF(map, old.version=old.version, new.version=new.version, magetab.version=magetab.version, platform=platform)
+  buildSDRF(map, old.version=old.version, new.version=new.version, magetab.version=magetab.version, platform=platform, revision=revision)
   setwd(oldwd)
 } # }}} 
 

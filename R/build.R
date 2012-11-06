@@ -70,6 +70,22 @@ mapBatches <- function(xls.files, parallel=FALSE, link.raw=FALSE)
   return(map)
 } # }}}
 
+## Get MANIFEST file from TCGA portal
+getManifest <- function(version='0', level='1', disease, batch, platform="HumanMethylation450"){
+	target <- "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor"
+	domain <- "cgcc/jhu-usc.edu/humanmethylation450/methylation"
+	center <- "jhu-usc.edu"
+	dir <- paste("Level", level, sep="_")
+	url <- paste(target,
+		     tolower(disease),
+		     domain,
+		     paste(paste(center, disease, sep="_"), platform, dir, batch, version, 0, sep="."),
+		     "MANIFEST.txt",
+		     sep="/")
+	cmd <- paste("curl -O", url, sep=" ")
+	system(cmd)
+}
+
 ## e.g. runBatchByName(map.UCEC,'137') is the same as runBatchByID(map.UCEC,10)
 runBatchByName <- function(map, name, base=NULL, platform='HumanMethylation450')
 { # {{{
@@ -120,7 +136,7 @@ runBatchByID <- function(map, batch.id,base=NULL,platform='HumanMethylation450')
 } # }}}
 
 ## write level 1/2/3 for a batch -- aux/mage-tab are still done with a full map
-writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
+writeBatch <- function(x,batch.id,old.version='0',version='0',base=NULL,parallel=F,lvls=c(1:3), revision=FALSE)
 { # {{{ assuming that the full map will be used for aux and mage-tab
 
   dirs = list()
@@ -163,18 +179,28 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
     if(!file.exists(dirs$level_1)) dir.create(dirs$level_1)
     oldwd = getwd()
     setwd(dirs$level_1)
+    
     batchname = unique(x$TCGA.BATCH[ which(x$BATCH.ID == batch.id) ])
     stopifnot(length(batchname)==1)
     subjects = sampleNames(x)[ which(x$BATCH.ID == batch.id) ]
-    for(s in subjects) { # {{{
-      xs = which(sampleNames(x) == s)
-      message(paste("Copying IDAT files for sample", which(subjects == s),
-                    "of", length(subjects), "in TCGA batch", batchname))
-      stub = paste(x$barcode[xs], '_', sep='')
-      for(i in paste(stub, c('Grn.idat','Red.idat'), sep='')) {
-        file.link(paste(dirs$raw, i, sep='/'), paste('.', i, sep='/'))
-      }
-    } # }}}
+    if(!revision){
+      for(s in subjects) { # {{{
+        xs = which(sampleNames(x) == s)
+        message(paste("Copying IDAT files for sample", which(subjects == s),
+                      "of", length(subjects), "in TCGA batch", batchname))
+        stub = paste(x$barcode[xs], '_', sep='')
+        for(i in paste(stub, c('Grn.idat','Red.idat'), sep='')) {
+          file.link(paste(dirs$raw, i, sep='/'), paste('.', i, sep='/'))
+        }
+      } # }}}
+    } else{
+	message(paste("Retrieving Level 1 MANIFEST for Batch", batch.id, "from TCGA portal for revision", sep=" "))
+        #getManifest(version=old.version, level='1', disease=disease, batch=batch.id, platform)
+	#manifest <- paste(pkged,paste(diseasestub, platform, 'Level_1', batch.id,
+        #                              version, '0', sep='.'), 'MANIFEST.txt', sep='/')
+	#cmd <- paste('cp', manifest, '.', sep=' ')
+	#system(cmd)
+    }
     setwd(oldwd)
   } # }}}
 
@@ -186,36 +212,41 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
     if(!file.exists(dirs$level_2)) dir.create(dirs$level_2)
     oldwd = getwd()
     setwd(dirs$level_2)
+    
     batchname = unique(x$TCGA.BATCH[ which(x$BATCH.ID == batch.id) ])
     stopifnot(length(batchname)==1)
     subjects = sampleNames(x)[ which(x$BATCH.ID == batch.id) ]
+    if(!revision){
+      write.level2 <- function(s) { # {{{
+        xs = which(sampleNames(x) == s)
+        message(paste("Writing level 2 data for sample", which(subjects == s),
+                      "of", length(subjects), "in TCGA batch", batchname))
+        lvl2data = data.frame( M=methylated(x)[,xs], 
+                               U=unmethylated(x)[,xs],
+                               P=pvals(x)[,xs] )
+        rownames(lvl2data) = featureNames(x)
+        dump.file = paste(paste(diseasestub,platform,b,'lvl-2',s,'txt',sep='.'))
+        headers1 = paste('Hybridization REF', s, s, s, sep="\t")
+        headers2 = paste('Composite Element REF', 'Methylated_Intensity', 
+                         'Unmethylated_Intensity', 'Detection_P_value', sep="\t")
+        cat(headers1, "\n", sep='', file=dump.file)
+        cat(headers2, "\n", sep='', file=dump.file, append=TRUE)
+        write.table(lvl2data, file=dump.file, append=TRUE, quote=FALSE,
+                              row.names=TRUE, col.names=FALSE, sep="\t")
+        return('done')
+      } # }}}
 
-    write.level2 <- function(s) { # {{{
-      xs = which(sampleNames(x) == s)
-      message(paste("Writing level 2 data for sample", which(subjects == s),
-                    "of", length(subjects), "in TCGA batch", batchname))
-      lvl2data = data.frame( M=methylated(x)[,xs], 
-                             U=unmethylated(x)[,xs],
-                             P=pvals(x)[,xs] )
-      rownames(lvl2data) = featureNames(x)
-      dump.file = paste(paste(diseasestub,platform,b,'lvl-2',s,'txt',sep='.'))
-      headers1 = paste('Hybridization REF', s, s, s, sep="\t")
-      headers2 = paste('Composite Element REF', 'Methylated_Intensity', 
-                       'Unmethylated_Intensity', 'Detection_P_value', sep="\t")
-      cat(headers1, "\n", sep='', file=dump.file)
-      cat(headers2, "\n", sep='', file=dump.file, append=TRUE)
-      write.table(lvl2data, file=dump.file, append=TRUE, quote=FALSE,
-                            row.names=TRUE, col.names=FALSE, sep="\t")
-      return('done')
-    } # }}}
-
-    b = batch.id
-    if(parallel) {
-      if(!require(parallel)) require(multicore)
-      results <- mclapply(subjects, write.level2)
-    } else { 
-      results <- lapply(subjects, write.level2)
-    }
+      b = batch.id
+      if(parallel) {
+        if(!require(parallel)) require(multicore)
+        results <- mclapply(subjects, write.level2)
+      } else { 
+        results <- lapply(subjects, write.level2)
+      }
+  } else{
+	message(paste("Retrieving Level 2 MANIFEST for Batch", batch.id, "from TCGA portal for revision", sep=" "))
+        #getManifest(version=old.version, level='2', disease=disease, batch=batch.id, platform)
+  }
 
     gc(,T)
     setwd(oldwd) 
@@ -297,7 +328,7 @@ writeBatch <- function(x,batch.id,version='0',base=NULL,parallel=F,lvls=c(1:3))
 } # }}}
 
 ## build aux, level 1, and mage-tab across all batches; levels 2 & 3 by batch
-buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform='HumanMethylation450', magetab.version=NULL, write.magetab=TRUE, lvls=c(1:3))
+buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform='HumanMethylation450', magetab.version=NULL, write.magetab=TRUE, lvls=c(1:3), revision=FALSE)
 { # {{{
   METHYLUMISET = FALSE
   if(is(map, 'MethyLumiSet')) { # {{{ METHYLUMISET = TRUE
@@ -334,7 +365,7 @@ buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform
   message('Writing level 2 and level 3 data...')
   if(METHYLUMISET==TRUE) {
     for(b in bs) {
-      writeBatch(x, b, version=new.version, lvls=lvls)
+      writeBatch(x, b, old.version=old.version, version=new.version, lvls=lvls, revision=revision)
     }
   } else {
     for(b in bs) {
@@ -343,7 +374,7 @@ buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform
   }
   if(write.magetab){
     message('Writing mage-tab IDF and SDRF files...')
-    mageTab(map, old.version=old.version, new.version=new.version, base=base, magetab.version=magetab.version, platform=platform, lvls=lvls)
+    mageTab(map, old.version=old.version, new.version=new.version, base=base, magetab.version=magetab.version, platform=platform, lvls=lvls, revision=revision)
   }
   #message('Packaging and signing each directory...')
   #packageAndSign(x, base=base, version=new.version, platform=platform) 
@@ -383,7 +414,7 @@ justSign <- function(map, base=NULL, version='0', platform='HumanMethylation450'
 } # }}}
 
 ## Adds MD5sums and tarballs for all of the archive directories for a tumor. 
-packageAndSign <- function(map, base=NULL, version='0', platform='HumanMethylation450') 
+packageAndSign <- function(map, base=NULL, version='0', platform='HumanMethylation450', revision=FALSE) 
 { # {{{
   oldwd = getwd()
   disease = unique(map$diseaseabr)
@@ -402,10 +433,12 @@ packageAndSign <- function(map, base=NULL, version='0', platform='HumanMethylati
   dir.patt = paste('^./jhu-usc.edu_',disease,'.',platform,sep='')
   dirs = grep(dir.patt, list.dirs(), value=TRUE)
   for(d in gsub('\\./','',dirs)) {
-    setwd(d)
-    if(file.exists('MANIFEST.txt')) file.remove('MANIFEST.txt')
-    system('/usr/bin/env md5sum * > MANIFEST.txt')
-    system('/usr/bin/env md5sum -c MANIFEST.txt')  # check it!
+    if(!(revision & grepl("Level_[12]", d))){
+      setwd(d)
+      if(file.exists('MANIFEST.txt')) file.remove('MANIFEST.txt')
+      system('/usr/bin/env md5sum * > MANIFEST.txt')
+      system('/usr/bin/env md5sum -c MANIFEST.txt')  # check it!
+    }
     setwd(dir.base)
     d.tgz = paste(d, 'tar', 'gz', sep='.')
     system(paste('/usr/bin/env tar czf', d.tgz, d))

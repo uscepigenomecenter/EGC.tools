@@ -47,7 +47,7 @@ setClass("SDRF", contains=c("tcgaExtract","tcgaLevel1", "tcgaLevel2", "tcgaLevel
 			platform="character",
 			version="character"))
 
-SDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platform='HumanMethylation450'){
+SDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platform='HumanMethylation450', revision=FALSE){
 	if(is(x, 'MethyLumiSet')) {
 		stopifnot('barcode' %in% varLabels(x))
 		stopifnot('BATCH.ID' %in% varLabels(x))
@@ -162,7 +162,11 @@ SDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platf
 	channel = rep(c('Grn.idat', 'Red.idat'), length(subjects))
 	idat.file = paste(barcode, channel, sep='_')
 	batch = rep(x$BATCH.ID, each=2)
-	name.archive.l1 = paste(prepreamble,'Level_1',batch,new.version,'0',sep='.')
+	if(revision){
+		name.archive.l1 = paste(prepreamble,'Level_1',batch,old.version,'0',sep='.')
+	} else{
+		name.archive.l1 = paste(prepreamble,'Level_1',batch,new.version,'0',sep='.')
+	}
 	name.archive.l1 = as(name.archive.l1, "Rle")
 	data.type = Rle('DNA Methylation', length(subjects) * 2)
 	data.level.l1 = Rle('Level 1', length(subjects) * 2)
@@ -180,7 +184,11 @@ SDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platf
 	protocol.norm = Rle(paste(domain,'within_bioassay_data_set_function',platform,'01',sep=':'), length(subjects) * 2)
 	#name.norm = name
 	data.matrix.file.l2 = paste(prepreamble,batch,'lvl-2',name,'txt',sep='.')
-	name.archive.l2 = paste(prepreamble,'Level_2',batch,new.version,'0',sep='.')
+	if(revision){
+		name.archive.l2 = paste(prepreamble,'Level_2',batch,old.version,'0',sep='.')
+	} else{
+		name.archive.l2 = paste(prepreamble,'Level_2',batch,new.version,'0',sep='.')
+	}
 	name.archive.l2 = as(name.archive.l2, "Rle")
 	data.level.l2 = Rle('Level 2', length(subjects) * 2)
 
