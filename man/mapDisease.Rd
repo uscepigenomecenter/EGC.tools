@@ -2,10 +2,10 @@
 \alias{mapDisease}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Retrieve Disease ids from DANEUS
+Map a set of Diseases to their assigned IDs in DANEUS
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Given a vector of disease types, retrieve and map their assigned IDs from DANEUS
 }
 \usage{
 mapDisease(con = NULL, disease)
@@ -13,27 +13,23 @@ mapDisease(con = NULL, disease)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{con}{
-%%     ~~Describe \code{con} here~~
+	A valid connection object as produced by dbConnect() which provides a connection to DANEUS
 }
   \item{disease}{
-%%     ~~Describe \code{disease} here~~
+	A character vector of valid TCGA disease types
 }
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+The function returns a mapping of the provided diseases to their assigned IDs in DANEUS. If a disease type is not found in the database the function tries to insert it into the database and assign it an ID. If the insertion is unsuccessful the function returns the error message returned by the MySQL INSERT query.
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+An integer vector of disease IDs
 }
 \references{
 %% ~put references to the literature/web site here ~
 }
 \author{
-%%  ~~who you are~~
+Moiz Bootwalla
 }
 \note{
 %%  ~~further notes~~
@@ -42,39 +38,15 @@ mapDisease(con = NULL, disease)
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{dbConnect}},
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
-
-## The function is currently defined as
-function (con = NULL, disease) 
-{
-    require("RMySQL")
-    if (is.null(con)) 
-        stop("Please provide a Database connection object: see ?dbConnect")
-    disease.db <- getDisease(con)
-    map <- match(disease, disease.db[, "name"])
-    if (any(is.na(map))) {
-        new.disease <- unique(disease[which(is.na(map))])
-        new.disease <- ifelse(length(new.disease) > 1, paste(new.disease, 
-            collapse = "','"), new.disease)
-        message(paste("Inserting '", new.disease, "' into the DISEASE Table", 
-            sep = ""))
-        if (insertDisease(con, new.disease)) {
-            disease.db <- getDisease(con)
-            map <- match(disease, disease.db[, "name"])
-        }
-        else {
-            stop(paste("There was an error inserting '", new.disease, 
-                "' into the database", sep = " "))
-        }
-    }
-    disease.id <- disease.db[, "id"][map]
-    return(disease.id)
-  }
+\dontrun{
+	disease <- rep(c("LUSC", "THCA", "BLCA"), each=3)
+	#Create a connection to DANEUS
+	con <-  dbConnect(MySQL(), host, user, pass, db='daneus')
+	id <- mapDisease(con, disease)
+	}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
