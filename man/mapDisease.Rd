@@ -2,10 +2,10 @@
 \alias{mapDisease}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Map a set of Diseases to their assigned IDs in DANEUS
+Map a set of Diseases to their assigned IDs in DANEUS's DISEASE Table
 }
 \description{
-Given a vector of disease types, retrieve and map their assigned IDs from DANEUS
+Given a vector of disease types, retrieve and map their assigned IDs from the Epigenome Center Methyation database DANEUS
 }
 \usage{
 mapDisease(con = NULL, disease)
@@ -38,7 +38,7 @@ Moiz Bootwalla
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\code{\link{dbConnect}},
+\code{\link{dbConnect}}, \code{\link{getDisease}}, \code{\link{insertDisease}}
 }
 \examples{
 \dontrun{
