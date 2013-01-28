@@ -1,6 +1,5 @@
-## Various functions to build TCGA packages and such
-loadOneOff <- function(mapping, label, platform='HumanMethylation450', path='/export/uec-gs1/laird/shared/production/methylation', project='tcga') {
-  # {{{
+loadOneOff <- function(mapping, label, platform='HumanMethylation450', path='/export/uec-gs1/laird/shared/production/methylation', project='tcga') 
+{ # {{{
   require(methylumi)
   platform.path = paste(path, 
                         ifelse(grepl('HumanMethylation450',platform,ignore=T),
@@ -32,26 +31,65 @@ loadOneOff <- function(mapping, label, platform='HumanMethylation450', path='/ex
   }
 } # }}}
 
-writeOneOffExcel <- function(x, label) {
-  # {{{
-  message("Dumping betas, M, U, p-values and controls to Excel sheets...")
-  stop("This function ain't implemented yet")
-} # }}}
+runOneOff <- function(label, rootdir=NULL, mapdir=NULL, jobdir=NULL) 
+{ # {{{
 
-writeOneOffCSVs <- function(x, label) {
-  # {{{
-  message("Dumping betas, M, U, and p-values, and controls to CSV files...")
-  stop("This function ain't implemented yet")
-} # }}}
+  ## {{{ default rootdir, mapdir, and jobdir settings
+  if(is.null(rootdir)) 
+    rootdir <- "/export/uec-gs1/laird/shared/production/methylation/meth450k"
+  if(is.null(mapdir)) 
+    mapdir <- paste0(rootdir, '/mappings') 
+  if(is.null(jobdir)) 
+    jobdir <- paste0(rootdir, '/processed/internal/', label)
+  ## }}}
 
-plotOneOffQC <- function(x, label) {
-  # {{{
-  message("Generating QC plots...")
-  stop("This function ain't implemented yet")
-} # }}}
+  ## read in the chip mappings and any additional pData
+  mapfile <- paste0(mapdir, '/', label, '.mapping.csv')
+  mapping <- read.csv(mapfile)
+  stopifnot(nrow(mapping) > 0 && ncol(mapping) > 0)
 
-saveOneOff<- function(x, label) {
-  # {{{
-  stop("This function ain't implemented yet")
-} # }}}
+  ## load the data from IDAT files
+  methyldata <- loadOneOff(mapping, label, project='internal')
+  stopifnot(class(methyldata) %in% c('MethyLumiSet','MethylSet'))
 
+  ## save the raw dataset
+  rawrda <- paste0(jobdir, '/', label, '.raw.rda')
+  save(methyldata, file=rawrda)
+
+  ## write out the raw beta values
+  rawbetas <- paste0(jobdir, '/', label, '.betas.raw.txt')
+  write.table(betas(methyldata), sep="\t", file=rawbetas)
+
+  ## preprocess: background correct and dye-bias equalize
+  methyldata <- stripMethyLumiSet(methylumi.bgcorr(methyldata, 'noob'))
+  methyldata <- normalizeMethyLumiSet(methyldata) ## should we set a referent?
+
+  ## save the processed dataset
+  fixedrda <- sub('raw', 'corrected', rawrda) ## just swap words :-)
+  save(methyldata, file=fixedrda)
+
+  ## write out the corrected beta values
+  fixedbetas <- sub('raw', 'corrected', rawbetas) ## as above
+  write.table(betas(methyldata), sep="\t", file=fixedbetas)
+
+  ## write out the corrected M intensities
+  fixedMintensities <- sub('betas', 'methylated', fixedbetas)
+  write.table(methylated(methyldata), sep="\t", file=fixedMintensities)
+
+  ## write out the corrected U intensities
+  fixedUintensities <- sub('betas', 'unmethylated', fixedbetas)
+  write.table(unmethylated(methyldata), sep="\t", file=fixedUintensities)
+
+  ## write out the p values (which don't change!)
+  fixedPvals <- sub('betas', 'pvalues', fixedbetas)
+  write.table(pvals(methyldata), sep="\t", file=fixedPvals)
+
+  ## write out the sequence of commands performed for this job
+  processinghistory <- paste0(jobdir, '/', label, '.history.R')
+  savehistory(processinghistory)
+
+  ## if we got here:
+  message(paste('Processing completed for', label))
+  message(paste('Results may be found in', jobdir))
+
+} # }}}
