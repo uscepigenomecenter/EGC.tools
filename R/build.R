@@ -479,3 +479,83 @@ validateArchive <- function(map,base=NULL, version='0', platform='HumanMethylati
   system(validator.command)
   setwd(oldwd) 
 } # }}}
+
+## Wrapper function that makes building an archive basically a one liner
+packageArchive <- function(map, disease=NULL, old.version='0', new.version='0', platform='HumanMethylation450',
+			   magetab.version=NULL, write.magetab=TRUE, lvls=c(1:3), revision=FALSE)
+{
+	if(is.null(disease)){
+		stop("Please provide the tumor name for which the archive is to be built")
+	}
+	
+	cwd <- getwd()
+	wd <- paste("~", disease, sep="/")
+	raw <- paste("~", "meth450k", "raw", disease, sep="/")
+	mset <- paste("~", "meth450k", "MethyLumiSets", sep="/")
+	
+	setwd(raw)
+	
+	message(paste("Reading idats for", disease, sep=" "))
+		
+	TUMOR <- methylumIDAT(map, parallel=T)
+
+	message("Checking for Failed Samples")
+	
+	failed <- runSampleQC(TUMOR, filepath=wd)
+	if(!is.null(failed)){
+		TUMOR <- TUMOR[, -failed]
+	}
+	save(TUMOR, file=paste(mset, paste(disease, "raw", "rda", sep="."), sep="/"))
+	gc()
+
+	message("Performing Background Correction and Stripping MethyLumiSet of unneeded data")
+	
+	TUMOR <- stripMethyLumiSet(methylumi.bgcorr(TUMOR))
+	gc()
+
+	message("Performing Dye-Bias Equalization")
+	
+	TUMOR <- normalizeMethyLumiSet(TUMOR)
+	save(TUMOR, file=paste(mset, paste(disease, "rda", sep="."), sep="/"))
+	gc()
+
+	message("Generating QC Probe Plot")
+	
+	pdf(paste(wd, paste(disease, "pdf", sep="."), sep="/"))
+	qc.probe.plot(TUMOR)
+	dev.off()
+	gc()
+
+	message("Generating Histogram of No. of Failed probes per sample")
+	
+	png(paste(wd, paste(disease, "sample", "summary", "png", sep="."), sep="/"))
+	plotSampleSummary(TUMOR)
+	dev.off()
+	gc()
+
+	message("Generating Density Plot of Cell Line Control Beta Values")
+	
+	controls <- which(TUMOR$histology %in% c("Cell Control Line", "Cytogenetically Normal", "Cell Line Control"))
+	png(paste(wd, paste(disease, "cell", "line", "controls", "png", sep="."), sep="/"))
+	plotDensities(TUMOR, controls = controls, label = "Cell Line Controls Beta")
+	dev.off()
+	gc()
+
+	message("Writing out failure rate for Samples and Probes")
+	
+	writeSampleSummary(TUMOR, filepath = wd)
+	writeProbeSummary(TUMOR, filepath = wd)
+	gc()
+
+	message("Building Level 1, 2, 3, aux and magetab Archives")
+	
+	buildArchive(TUMOR, base = base, old.version = old.version, new.version = new.version, platform = platform,
+		     magetab.version = magetab.version, write.magetab = write.magetab, lvls = lvls, revision = revision)
+	gc()
+
+	message("Packaging archives into tarballs and generating MD5 sums")
+	
+	packageAndSign(TUMOR, base = base, version = new.version, platform = platform, revision = revision)
+
+	setwd(cwd)
+}
