@@ -488,12 +488,12 @@ packageArchive <- function(map, disease=NULL, old.version='0', new.version='0', 
 		stop("Please provide the tumor name for which the archive is to be built")
 	}
 	
-	cwd <- getwd()
-	wd <- paste("~", disease, sep="/")
-	raw <- paste("~", "meth450k", "raw", disease, sep="/")
-	mset <- paste("~", "meth450k", "MethyLumiSets", sep="/")
+	oldwd <- getwd()
+	tumordir <- paste("~", disease, sep="/")
+	rawdir <- paste("~", "meth450k", "raw", disease, sep="/")
+	msetdir <- paste("~", "meth450k", "MethyLumiSets", sep="/")
 	
-	setwd(raw)
+	setwd(rawdir)
 	
 	message(paste("Reading idats for", disease, sep=" "))
 		
@@ -501,11 +501,12 @@ packageArchive <- function(map, disease=NULL, old.version='0', new.version='0', 
 
 	message("Checking for Failed Samples")
 	
-	failed <- runSampleQC(TUMOR, filepath=wd)
+	failed <- runSampleQC(TUMOR, filepath=tumordir)
 	if(!is.null(failed)){
 		TUMOR <- TUMOR[, -failed]
 	}
-	save(TUMOR, file=paste(mset, paste(disease, "raw", "rda", sep="."), sep="/"))
+	raw <- paste(mset, paste(disease, "raw", "rda", sep="."), sep="/")
+	save(TUMOR, file = raw)
 	gc()
 
 	message("Performing Background Correction and Stripping MethyLumiSet of unneeded data")
@@ -516,19 +517,20 @@ packageArchive <- function(map, disease=NULL, old.version='0', new.version='0', 
 	message("Performing Dye-Bias Equalization")
 	
 	TUMOR <- normalizeMethyLumiSet(TUMOR)
-	save(TUMOR, file=paste(mset, paste(disease, "rda", sep="."), sep="/"))
+	mset <- paste(mset, paste(disease, "rda", sep="."), sep="/")
+	save(TUMOR, file=mset)
 	gc()
 
 	message("Generating QC Probe Plot")
 	
-	pdf(paste(wd, paste(disease, "pdf", sep="."), sep="/"))
+	pdf(file.path(tumordir, paste(disease, "pdf", sep=".")))
 	qc.probe.plot(TUMOR)
 	dev.off()
 	gc()
 
 	message("Generating Histogram of No. of Failed probes per sample")
 	
-	png(paste(wd, paste(disease, "sample", "summary", "png", sep="."), sep="/"))
+	png(file.path(tumordir, paste(disease, "sample", "summary", "png", sep=".")))
 	plotSampleSummary(TUMOR)
 	dev.off()
 	gc()
@@ -536,15 +538,15 @@ packageArchive <- function(map, disease=NULL, old.version='0', new.version='0', 
 	message("Generating Density Plot of Cell Line Control Beta Values")
 	
 	controls <- which(TUMOR$histology %in% c("Cell Control Line", "Cytogenetically Normal", "Cell Line Control"))
-	png(paste(wd, paste(disease, "cell", "line", "controls", "png", sep="."), sep="/"))
+	png(file.path(tumordir, paste(disease, "cell", "line", "controls", "png", sep=".")))
 	plotDensities(TUMOR, controls = controls, label = "Cell Line Controls Beta")
 	dev.off()
 	gc()
 
 	message("Writing out failure rate for Samples and Probes")
 	
-	writeSampleSummary(TUMOR, filepath = wd)
-	writeProbeSummary(TUMOR, filepath = wd)
+	writeSampleSummary(TUMOR, filepath = tumordir)
+	writeProbeSummary(TUMOR, filepath = tumordir)
 	gc()
 
 	message("Building Level 1, 2, 3, aux and magetab Archives")
@@ -557,5 +559,5 @@ packageArchive <- function(map, disease=NULL, old.version='0', new.version='0', 
 	
 	packageAndSign(TUMOR, base = base, version = new.version, platform = platform, revision = revision)
 
-	setwd(cwd)
+	setwd(oldwd)
 }
