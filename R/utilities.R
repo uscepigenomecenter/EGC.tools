@@ -7,12 +7,12 @@ capwords <- function(s, strict = FALSE) {
      }
 
 # Utility function to aggreagate and clean up Dan's mappings before adding them to DANEUS
-cleanMap <- function(base=NULL, disease, platform='HumanMethylation450') {
+processMap <- function(base=NULL, disease, platform='HumanMethylation450') {
 	if(is.null(base)){
 		message("Assuming there is a directory called DaneusMappings in ~/Dropbox which contains Dan's mapping files")
 		base <- "~/Dropbox/DaneusMappings"
 	}
-	map.dir <- ifelse(grepl('450', base), file.path(base, disease), file.path(paste(base, "27k", sep="/"), disease))
+	map.dir <- ifelse(grepl('450', platform), file.path(base, disease), file.path(paste(base, "27k", sep="/"), disease))
 	oldwd <- getwd()
 	setwd(map.dir)
 	message("Canonicalizing Dan's mapping files assuming they have been standardized to expected input")
@@ -56,10 +56,32 @@ cleanMap <- function(base=NULL, disease, platform='HumanMethylation450') {
 	hist <- gsub("aml", "AML", hist, fixed=T)
 	hist <- gsub("Nos", "NOS", hist, fixed=T)
 	hist <- gsub("nos", "NOS", hist, fixed=T)
+	hist <- gsub("lms", "LMS", hist, fixed=T)
+	hist <- gsub("ups", "UPS", hist, fixed=T)
 	map$histology <- hist
 	map$tissue <- tissue
 	rm(hist, tissue, plate, well, uuid, source)
 	message("Need to add shipping dates manually, will fix it to automatically grab shipping dates once DCC 2.0 goes live")
+	setwd(oldwd)
 	return(map)
+}
+
+# Bunch of sanity checks to run on a mapping file before inserting the mappings into DANEUS
+runSanityChecks <- function(map){
+	message("Listing the  unique disease types in the mapping \n")
+	unique(map$diseaseabr)
+	message("Listing the unique tissue types in the mapping \n")
+	unique(map$tissue)
+	message("Listing unique histologies. Cross-check with know histologies in DANEUS to avoid speeling errors and duplication \n")
+	unique(map$histology)
+	if(any(duplicated(map$barcode))){
+		stop("Duplicate samples present. Please check mapping and remove any duplicates \n")
+	}
+	if(any(duplicated(map$TCGA.ID))){
+		stop("Duplicate samples present. Please check mapping and remove any duplicates \n")
+	}
+	if(any(is.na(map$TCGA.BATCH))){
+		stop("There are missing batches in the mapping \n")
+	}
 }
 	

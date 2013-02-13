@@ -481,7 +481,7 @@ validateArchive <- function(map,base=NULL, version='0', platform='HumanMethylati
 } # }}}
 
 ## Wrapper function that makes building an archive basically a one liner
-packageArchive <- function(map, disease=NULL, old.version='0', new.version='0', platform='HumanMethylation450',
+packageArchive <- function(map, disease=NULL, base=NULL, old.version='0', new.version='0', platform='HumanMethylation450',
 			   magetab.version=NULL, write.magetab=TRUE, lvls=c(1:3), revision=FALSE)
 {
 	if(is.null(disease)){
@@ -505,7 +505,7 @@ packageArchive <- function(map, disease=NULL, old.version='0', new.version='0', 
 	if(!is.null(failed)){
 		TUMOR <- TUMOR[, -failed]
 	}
-	raw <- paste(mset, paste(disease, "raw", "rda", sep="."), sep="/")
+	raw <- paste(msetdir, paste(disease, "raw", "rda", sep="."), sep="/")
 	save(TUMOR, file = raw)
 	gc()
 
@@ -517,7 +517,7 @@ packageArchive <- function(map, disease=NULL, old.version='0', new.version='0', 
 	message("Performing Dye-Bias Equalization")
 	
 	TUMOR <- normalizeMethyLumiSet(TUMOR)
-	mset <- paste(mset, paste(disease, "rda", sep="."), sep="/")
+	mset <- paste(msetdir, paste(disease, "rda", sep="."), sep="/")
 	save(TUMOR, file=mset)
 	gc()
 

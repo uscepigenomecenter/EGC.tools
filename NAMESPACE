@@ -3,7 +3,7 @@ import(methylumi)
 import(matrixStats)
 import(RMySQL)
 
-export(loadMap, mapBatches, getManifest, runBatchByName, runBatchByID, writeBatch, buildArchive, justSign, packageAndSign, validateArchive, getDisease, insertDisease, mapDisease, getTissue, insertTissue, mapTissue, getHistology, insertHistology, mapHistology, getBatch, insertBatch, mapBatch, getStatus, getPlatform, getProject, insertSample, buildIDF, buildSDRF, addDescription, mageTab, loadOneOff, runOneOff, canonicalizeExcelFile, canonicalizeMapping, checkSampleLabels, checkDirs, verifyDataDirs, linkRawData, makeArchiveDirs, getTidyHistory, writeTidyHistory, capwords, cleanMap,  getSampleSummary, writeSampleSummary, getProbeSummary, writeProbeSummary, plotSampleSummary, plotDensities, runSampleQC)
+export(loadMap, mapBatches, getManifest, runBatchByName, runBatchByID, writeBatch, buildArchive, justSign, packageAndSign, validateArchive, packageArchive, getDisease, insertDisease, mapDisease, getTissue, insertTissue, mapTissue, getHistology, insertHistology, mapHistology, getBatch, insertBatch, mapBatch, getStatus, getPlatform, getProject, insertSample, buildIDF, buildSDRF, addDescription, mageTab, loadOneOff, runOneOff, canonicalizeExcelFile, canonicalizeMapping, checkSampleLabels, checkDirs, verifyDataDirs, linkRawData, makeArchiveDirs, getTidyHistory, writeTidyHistory, capwords, processMap, runSanityChecks, getSampleSummary, writeSampleSummary, getProbeSummary, writeProbeSummary, plotSampleSummary, plotDensities, runSampleQC)
 
 exportClasses("tcgaExtract", "tcgaLevel1", "tcgaLevel2", "tcgaLevel3", "SDRF")
 exportMethods("show", "getExtract", "getLevel1", "getLevel2", "getLevel3")
