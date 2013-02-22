@@ -69,11 +69,11 @@ processMap <- function(base=NULL, disease, platform='HumanMethylation450') {
 # Bunch of sanity checks to run on a mapping file before inserting the mappings into DANEUS
 runSanityChecks <- function(map){
 	message("Listing the  unique disease types in the mapping \n")
-	unique(map$diseaseabr)
+	print(unique(map$diseaseabr))
 	message("Listing the unique tissue types in the mapping \n")
-	unique(map$tissue)
-	message("Listing unique histologies. Cross-check with know histologies in DANEUS to avoid speeling errors and duplication \n")
-	unique(map$histology)
+	print(unique(map$tissue))
+	message("Listing unique histologies. Cross-check with know histologies in DANEUS to avoid spelling errors and duplication \n")
+	print(unique(map$histology))
 	if(any(duplicated(map$barcode))){
 		stop("Duplicate samples present. Please check mapping and remove any duplicates \n")
 	}
