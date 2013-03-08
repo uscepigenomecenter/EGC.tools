@@ -9,14 +9,14 @@ makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, l
     platform = gsub('k$','',gsub('Illumina','',annotation(x))) 
     stopifnot('TCGA.ID' %in% varLabels(x))
     sampleNames(x) <- x$TCGA.ID
-    message("Warning: this function assumes you have already removed controls!")
+    #message("Warning: this function assumes you have already removed controls!")
   } # }}}
   stopifnot( is(map, 'data.frame') )
-  if(any(map$histology == 'Cytogenetically Normal')) { 
-    message('There are cell line controls in your data, which MAY fail at DCC.')
-  } else {
-    message('There are no cell line controls in your data, just so you know.')
-  }
+  #if(any(map$histology == 'Cytogenetically Normal')) { 
+  #  message('There are cell line controls in your data, which MAY fail at DCC.')
+  #} else {
+  #  message('There are no cell line controls in your data, just so you know.')
+  #}
   dirs = list()
   if(is.null(base)) { # {{{
     message('Assuming symlinks $HOME/meth27k and $HOME/meth450k both exist...')

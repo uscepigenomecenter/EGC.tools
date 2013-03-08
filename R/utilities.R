@@ -74,6 +74,9 @@ runSanityChecks <- function(map){
 	print(unique(map$tissue))
 	message("Listing unique histologies. Cross-check with know histologies in DANEUS to avoid spelling errors and duplication \n")
 	print(unique(map$histology))
+	message("Listing the batches and their ordering. Check carefully \n")
+	print(unique(map$TCGA.BATCH))
+	print(unique(map$BATCH.ID))
 	if(any(duplicated(map$barcode))){
 		stop("Duplicate samples present. Please check mapping and remove any duplicates \n")
 	}

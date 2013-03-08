@@ -6,15 +6,12 @@
 \description{
   If the function squawks, do what it says, and fix the offending elements.
 }
-\examples{
-
-## map <- loadMap(KIRC) # or
-## map <- mapBatches(list.files(patt='xls'))
-## linkRawData(KIRC)
-## setwd('~/meth450k/raw/KIRC')
-## KIRC <- methylumIDAT(map, parallel=TRUE)
-## table(KIRC$histology)
-## buildArchive(KIRC)
-## packageAndSign(KIRC)
-
+\author{
+Tim Triche Jr.
 }
+\examples{
+\dontrun{
+     map <- mapBatches(list.files(patt='xls'))
+}
+}
+

@@ -63,25 +63,19 @@ The Methylation database currently only contains sample from the following two P
 \value{
 getDisease and getTissue return a data fram containing the following information:
 \item{name }{Character vector containing the disease or tissue types}
-\item{id }{Integer vector containing the IDs assigned to the correponding disease and tissue types in \option{name}}
-
-
+\item{id }{Integer vector containing the IDs assigned to the correponding disease and tissue types in \option{name}}\cr\cr
 
 getHistology returns the following data frame:
 \item{name }{Character vector of Histology types}
 \item{id }{Integer vector of IDs assigned to the histology types}
 \item{tissue }{Integer vector of Tissue IDs}
-\item{disease }{Integer vector of Disease IDs}
-
-
+\item{disease }{Integer vector of Disease IDs}\cr\cr
 
 getBacth returns the following data frame:
 \item{disease }{Integer vector of Disease IDs}
 \item{id }{Integer vector of IDs assigned to the batches}
 \item{ordering }{Integer vector containing the batch number assigned to a particular batch on the TCGA Data Portal}
-\item{batch }{Character vector containing the actual TCGA Batch assigned to a Batch in the BCR shipping manifest}
-
-
+\item{batch }{Character vector containing the actual TCGA Batch assigned to a Batch in the BCR shipping manifest}\cr\cr
 
 getStatus, getPlatform and getProject each return an Integer vector containing the ID assigned to the queried status, platform or project respectively
 }

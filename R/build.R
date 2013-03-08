@@ -71,7 +71,7 @@ mapBatches <- function(xls.files, parallel=FALSE, link.raw=FALSE)
 } # }}}
 
 ## Get MANIFEST file from TCGA portal
-getManifest <- function(version='0', level='1', disease, batch, platform="HumanMethylation450"){
+getManifestFromDCC <- function(version='0', level='1', disease, batch, platform="HumanMethylation450"){
 	target <- "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor"
 	domain <- "cgcc/jhu-usc.edu/humanmethylation450/methylation"
 	center <- "jhu-usc.edu"
