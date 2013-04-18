@@ -31,13 +31,13 @@ buildArchive(map, old.version = "0", new.version = "0", base = NULL, platform = 
 	The version of the mage-tab directory to create. If \code{NULL} defaults to \code{new.version}
 }
   \item{write.magetab}{
-	Logical indicating whether or not the mage-tab directory should be created
+	Logical indicating whether or not the mage-tab files should be created
 }
   \item{lvls}{
 	Integer vector specifying the Levels for which to create directories
 }
   \item{revision}{
-	Logical indicating whether this is build is a revision or a fresh build
+	Logical indicating whether this build is a revision or a fresh build
 }
 }
 \details{

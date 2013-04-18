@@ -18,7 +18,7 @@ canonicalizeMapping <- function (map, synonyms = NULL, check = TRUE) {
                       histology = c("Histology", "X.Histology"), 
                       tissue = c("Tissue.Type"), 
                       diseaseabr = c("Disease.Abbreviation"), 
-                      TCGA.BATCH = c("Batch", "TCGAbatch", "Batch #"), 
+                      TCGA.BATCH = c("Batch", "TCGAbatch", "Batch #", "Batch.."), 
                       TCGA.ID = c("Biospecimen.Barcode.Side"), 
                       source = c("Plate.Well"))
     }

@@ -27,6 +27,17 @@ processMap <- function(base=NULL, disease, platform='HumanMethylation450') {
 		stop("There are missing UUIDs. Please check and remove the samples with missing UUIDs before proceeding")
 	}
 	map$uuid <- uuid
+	setwd(base)
+	cat(map$uuid, file="uuids.txt", sep="\n")
+	message("Grabbing sample shipping date from the Biospecimen Metadata Browser and expecting getShip.pl script to be present in base directory")
+	system("perl getShip.pl uuids.txt shipped.txt", ignore.stdout = TRUE)
+	setwd(map.dir)
+	shipped <- read.delim(file.path(base, "shipped.txt"), stringsAsFactors=F, header=F)[,2]
+	shipped <- as.character(as.Date(shipped, format="%m/%d/%Y"))
+	if(any(shipped %in% c("", " "))){
+		stop("There are missing shipping dates. Please check and add missing shipping dates before proceeding")
+	}
+	map$shipped <- shipped
 	map <- map[,-8]
 	source <- lapply(strsplit(map$source, split=" "), function(x){x[c(2,4)]})
 	plate <- unlist(lapply(source, function(x){x[1]}), use.names=F)
@@ -43,12 +54,15 @@ processMap <- function(base=NULL, disease, platform='HumanMethylation450') {
 	tissue <- map$tissue
 	# Remove any spaces that might be at the end
 	tissue <- gsub("\\s$", "", tissue, perl=T)
+	# Get rid of any CNTL diseaseabr
+	disease <- unique(map$diseaseabr)
+	disease <- disease[which(disease != "CNTL")]
 	# Rename the tissue type for all Normals to Matched Normals
 	tissue[which(hist %in% c("Normal Tissue", "Normal"))] <- "Matched Normal"
-	tissue[which(hist %in% c("Cytogenetically Normal", "Cell Control Line", "Control Cell Line"))] <- "Cell Line Control"
+	tissue[which(hist %in% c("Cytogenetically Normal", "Cell Control Line", "Control Cell Line", "Control"))] <- "Cell Line Control"
 	tissue[which(tissue %in% "Rectal")] <- "Rectum"
 	hist[which(hist == "Normal")] <- "Normal Tissue"
-	hist[which(hist %in% c("Cytogenetically Normal", "Cell Control Line", "Control Cell Line"))] <- "Cell Line Control"
+	hist[which(hist %in% c("Cytogenetically Normal", "Cell Control Line", "Control Cell Line", "Control"))] <- "Cell Line Control"
 	hist <- gsub("Rectum", "Rectal", hist)
 	hist <- gsub("Gbm", "GBM", hist)
 	hist <- gsub("Iii", "III", hist, fixed=T)
@@ -60,7 +74,8 @@ processMap <- function(base=NULL, disease, platform='HumanMethylation450') {
 	hist <- gsub("ups", "UPS", hist, fixed=T)
 	map$histology <- hist
 	map$tissue <- tissue
-	rm(hist, tissue, plate, well, uuid, source)
+	map$diseaseabr <- disease
+	rm(hist, tissue, plate, well, uuid, source, disease)
 	message("Need to add shipping dates manually, will fix it to automatically grab shipping dates once DCC 2.0 goes live")
 	setwd(oldwd)
 	return(map)

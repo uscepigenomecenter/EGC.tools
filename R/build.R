@@ -523,7 +523,7 @@ packageArchive <- function(map, disease=NULL, base=NULL, old.version='0', new.ve
 
 	message("Generating QC Probe Plot")
 	
-	pdf(file.path(tumordir, paste(disease, "pdf", sep=".")))
+	png(file.path(tumordir, paste(disease, "png", sep=".")))
 	qc.probe.plot(TUMOR)
 	dev.off()
 	gc()
