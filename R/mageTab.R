@@ -349,6 +349,13 @@ addDescription <- function(x, platform='HumanMethylation450') {
   }
   disease = unique(x$diseaseabr)
   stopifnot(length(disease) == 1)
+  Rversion <- sessionInfo()$R.version$version.string
+  Rplatform <- paste("Platform", sessionInfo()$platform, sep="-")
+  basePkgs <- paste("Base R Packages", paste(sessionInfo()$basePkgs, collapse=", "), sep=" : ")
+  attachedPkgs <- paste("Attached R Packages",
+			paste(paste(names(sessionInfo()$otherPkgs),
+				    unlist(lapply(sessionInfo()$otherPkgs, function(x){x$Version}), use.names=F), sep="-"), collapse=", "), sep=" : ")
+
   if(platform == 'HumanMethylation450') {
     boilerplate = paste('This data archive contains the Cancer Genome Atlas (TCGA) analysis of DNA methylation profiling using the IIllumina Infinium',platform,'platform. The Infinium platform analyzes up to 482,421 CpG dinucleotides and 3091 CpH trinucleotides, spanning gene-associated elements as well as intergenic regions. DNA samples were received, bisulfite converted and cytosine methylation was evaluated using IIllumina Infinium',platform,'microarrays.')
   } else { 
@@ -372,7 +379,11 @@ addDescription <- function(x, platform='HumanMethylation450') {
   }
 
   level.desc = paste(level.desc, 
-'LEVEL 3: Derived summary measures (beta values: M/(M+U) for each interrogated locus) with annotations for gene symbol, chromosome (UCSC hg19, Feb 2009), and CpG/CpH coordinate (UCSC hg19, Feb 2009). Probes having a SNP within 10bp of the interrogated CpG site or having 15bp from the interrogated CpG site overlap with a REPEAT element (as defined by RepeatMasker and Tandem Repeat Finder Masks based on UCSC hg19, Feb 2009) are masked as NA across all samples, and probes with a non-detection probability (P-value) greater than 0.05 in a given sample are masked as NA on that chip. Probes that are mapped to multiple sites on hg19 are annotated as NA for chromosome and 0 for CpG/CpH coordinate',sep="\n\n")
-  
-  cat(boilerplate, sample.desc, level.desc, file='DESCRIPTION.txt', sep="\n\n")
+'LEVEL 3: Derived summary measures (beta values: M/(M+U) for each interrogated locus) with annotations for gene symbol, chromosome (UCSC hg19, Feb 2009), and CpG/CpH coordinate (UCSC hg19, Feb 2009). Probes having a common SNP (common SNP is a SNP with Minor Allele Frequency > 1% as defined by the UCSC snp135common track) within 10bp of the interrogated CpG site or having 15bp from the interrogated CpG site overlap with a REPEAT element (as defined by RepeatMasker and Tandem Repeat Finder Masks based on UCSC hg19, Feb 2009) are masked as NA across all samples, and probes with a non-detection probability (P-value) greater than 0.05 in a given sample are masked as NA on that chip. Probes that are mapped to multiple sites on hg19 are annotated as NA for chromosome and 0 for CpG/CpH coordinate',sep="\n\n")
+
+  session.desc <- "This archive was created using R (http://www.R-project.org). The package 'EGC.tools' was used to package the data and is available on GitHub (http://github.com/uscepigenomecenter). Information regarding the version of R and the packages that were used to create this package is included below. All of the packages are available from either Bioconductor (http://www.bioconductor.org) or CRAN (http://cran.r-project.org)"
+
+  session.desc <- paste(session.desc, Rversion, Rplatform, basePkgs, attachedPkgs, sep="\n\n")
+
+  cat(boilerplate, sample.desc, level.desc, session.desc, file='DESCRIPTION.txt', sep="\n\n")
 } # }}}

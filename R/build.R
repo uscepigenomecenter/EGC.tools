@@ -498,6 +498,13 @@ packageArchive <- function(map, disease=NULL, base=NULL, old.version='0', new.ve
 	message(paste("Reading idats for", disease, sep=" "))
 		
 	TUMOR <- methylumIDAT(map, parallel=T)
+	
+	data(probe.ordering)
+	if(!identical(featureNames(TUMOR), probe.ordering)){
+                TUMOR <- TUMOR[match(probe.ordering, featureNames(TUMOR)), ]
+        }
+        stopifnot(identical(featureNames(TUMOR), probe.ordering))
+        rm(probe.ordering); gc()
 
 	message("Checking for Failed Samples")
 	
@@ -523,15 +530,15 @@ packageArchive <- function(map, disease=NULL, base=NULL, old.version='0', new.ve
 
 	message("Generating QC Probe Plot")
 	
-	png(file.path(tumordir, paste(disease, "png", sep=".")))
-	qc.probe.plot(TUMOR)
+	pdf(file.path(tumordir, paste(disease, "pdf", sep=".")))
+	print(qc.probe.plot(TUMOR))
 	dev.off()
 	gc()
 
 	message("Generating Histogram of No. of Failed probes per sample")
 	
 	png(file.path(tumordir, paste(disease, "sample", "summary", "png", sep=".")))
-	plotSampleSummary(TUMOR)
+	print(plotSampleSummary(TUMOR))
 	dev.off()
 	gc()
 
@@ -539,7 +546,7 @@ packageArchive <- function(map, disease=NULL, base=NULL, old.version='0', new.ve
 	
 	controls <- which(TUMOR$histology %in% c("Cell Control Line", "Cytogenetically Normal", "Cell Line Control"))
 	png(file.path(tumordir, paste(disease, "cell", "line", "controls", "png", sep=".")))
-	plotDensities(TUMOR, controls = controls, label = "Cell Line Controls Beta")
+	print(plotDensities(TUMOR, controls = controls, label = "Cell Line Controls Beta"))
 	dev.off()
 	gc()
 
