@@ -103,3 +103,62 @@ runSanityChecks <- function(map){
 	}
 }
 	
+# Get clinical data for a tumor
+getClinical <- function(disease, outdir='.'){
+	disease <- tolower(disease)
+	target <- "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor"
+	domain <- "bcr/biotab/clin"
+	tumordir <- paste(target, disease, domain, sep="/")
+	file <- paste(paste("clinical", "patient", disease, sep="_"), "txt", sep=".")
+	url <- paste(tumordir, file, sep="/")
+	cmd <- paste("curl -O", url, sep=" ")
+	oldwd <- getwd()
+	setwd(outdir)
+	sapply(cmd, system)
+	setwd(oldwd)
+}
+
+getSNP6 <- function(disease, basedir='~/export/uec-gs1/laird/shared/research/bootwall/SNP6')
+{
+	require(stringr)
+	disease <- tolower(disease)
+	diseasedir <- file.path(basedir, toupper(disease))
+	if(!file.exists(diseasedir)) dir.create(diseasedir)
+	target <- "https://tcga-data-secure.nci.nih.gov/tcgafiles/tcga4yeo/tumor"
+	domain <- "cgcc/broad.mit.edu/genome_wide_snp_6/snp"
+	baseURL <- paste(target, disease, domain, sep="/")
+	links <- system(paste("~/bin/parseL2Links", baseURL, sep=" "), intern=TRUE)
+	l2links <- links[-grep("mage-tab", links)]
+	mtlinks <- links[grep("mage-tab", links)]
+	batch <- str_sub(l2links, -11, -9)
+	batch <- gsub(".", "", batch, fixed=T)
+	#batchdir <- file.path(diseasedir, paste("Batch", batch, sep="_"))
+	#sapply(batchdir,
+	#       function(x){
+	#	       if(!file.exists(batchdir)){
+	#		       dir.create(batchdir)
+	#		       message(paste("Creating directory", x, sep=" "))
+	#	       } else{
+	#		       message(paste("Directory", x, "already exists", sep=" "))
+	#	       }})
+	l2byBatch <- split(l2links, batch)
+	l2dir <- lapply(l2byBatch,
+			function(x){
+				version <- as.numeric(sapply(x, str_sub, -7, -4))
+				v <- which(version == max(version))
+				return(x[v])
+			})
+	mtdir.version <- as.numeric(str_sub(mtlinks, -7, -4))
+	mtdir <- mtlinks[which(mtdir.version == max(mtdir.version))]
+	l2URL <- paste(baseURL, unlist(l2dir, use.names=FALSE), sep="/")
+	cmd <- paste("~/bin/parseBirdseedLinks", l2URL, sep=" ")
+	birdseedFiles <- sapply(cmd, system, intern=TRUE)
+	names(birdseedFiles) <- l2URL
+	birdseedURL <- list()
+	for(i in seq_along(birdseedFiles)){
+		birdseedURL[[i]] <- paste0(names(birdseedFiles)[i], birdseedFiles[[i]], sep="")
+	}
+	birdseedURL <- unlist(birdseedURL, use.names=FALSE)
+	cmd.birdseed <- paste("wget -O", paste(diseasedir, unlist(birdseedFiles, use.names=F), sep="/"), birdseedURL, sep=" ")
+	sapply(cmd.birdseed, system)
+}

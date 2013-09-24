@@ -1,0 +1,3 @@
+#!/bin/bash
+wget -O - $1 | grep -o '<a href=['"'"'"][^"'"'"']*['"'"'"]' | sed -e 's/^<a href=["'"'"']//' -e 's/["'"'"']$//' | grep -e 'Level_2' -e 'mage-tab' | grep -v 'tar'
+
