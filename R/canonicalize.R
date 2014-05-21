@@ -15,6 +15,7 @@ canonicalizeMapping <- function (map, synonyms = NULL, check = TRUE) {
     map = map[which(!is.na(map[,1])),] # blunt but effective
     if (is.null(synonyms)) {
       synonyms = list(barcode = c("Complete.Barcode", "Complete.Barcode.ID"),
+                      uuid = c("UUID"),
                       histology = c("Histology", "X.Histology"), 
                       tissue = c("Tissue.Type"), 
                       diseaseabr = c("Disease.Abbreviation"), 

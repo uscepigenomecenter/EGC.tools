@@ -1,12 +1,12 @@
 ## Adds an Investigation Design Format file for all the batches in an archive.
-buildIDF <- function(x, version='0', magetab.version=magetab.version, platform='HumanMethylation450') 
+buildIDF <- function(x, version='0', magetab.version=magetab.version, platform='HumanMethylation450', series='0') 
 { # {{{
   if(is(x, 'MethyLumiSet')) {
     platform = gsub('k$','',gsub('Illumina','',annotation(x)))
   }
   disease = unique(x$diseaseabr)
   stopifnot(length(disease)==1)
-  filenm=paste('jhu-usc.edu_',disease,'.',platform,'.1.',magetab.version,'.0.idf.txt',
+  filenm=paste('jhu-usc.edu_',disease,'.',platform,'.1.',magetab.version,'.',series,'.idf.txt',
                sep='')
   sdrfnm=gsub('idf','sdrf',filenm)
 
@@ -295,9 +295,9 @@ buildIDF <- function(x, version='0', magetab.version=magetab.version, platform='
 
 #} # }}}
 
-buildSDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platform='HumanMethylation450', revision=FALSE)
+buildSDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platform='HumanMethylation450', revision=FALSE, series='0')
 {
-	sdrf <- SDRF(x, old.version=old.version, new.version=new.version, magetab.version=magetab.version, platform=platform, revision=revision)
+	sdrf <- SDRF(x, old.version=old.version, new.version=new.version, magetab.version=magetab.version, platform=platform, revision=revision, series=series)
 	sdrf.name <- sdrf@sdrf.name
 	headers <- sdrf@headers
 	cat(paste(headers, collapse="\t"), "\n", sep='', file=sdrf.name)
@@ -306,7 +306,7 @@ buildSDRF <- function(x, old.version='0', new.version='0', magetab.version='0', 
 }
 
 
-mageTab <- function(map, old.version='0', new.version='0', base=NULL, magetab.version=NULL, platform='HumanMethylation450', lvls=c(1:3), revision=FALSE)
+mageTab <- function(map, old.version='0', new.version='0', base=NULL, magetab.version=NULL, platform='HumanMethylation450', lvls=c(1:3), revision=FALSE, series='0')
 { # {{{
   if(is(map, 'MethyLumiSet')) { # {{{
     x <- map
@@ -326,10 +326,17 @@ mageTab <- function(map, old.version='0', new.version='0', base=NULL, magetab.ve
   if(is.null(magetab.version)){
     magetab.version = new.version
   }
-  archive.dir = paste(Sys.getenv('HOME'), platform.dir, 'tcga', disease,
-                      paste("version", new.version, sep=""), 
-                      paste(paste( 'jhu-usc.edu', disease, sep='_'), platform,
-                            'mage-tab', BID, magetab.version, '0', sep='.'), sep='/')
+  if(series == '0'){
+	  archive.dir = paste(Sys.getenv('HOME'), platform.dir, 'tcga', disease,
+	                paste("version", new.version, sep=""), 
+	                paste(paste( 'jhu-usc.edu', disease, sep='_'), platform,
+		       'mage-tab', BID, magetab.version, series, sep='.'), sep='/')
+  } else {
+	  archive.dir = paste(Sys.getenv('HOME'), platform.dir, 'tcga', disease,
+	                paste(series,'.',"version", new.version, sep=""), 
+	                paste(paste( 'jhu-usc.edu', disease, sep='_'), platform,
+		       'mage-tab', BID, magetab.version, series, sep='.'), sep='/')
+  }
   if(!('BATCH.ID' %in% names(map))) { # {{{
     stopifnot('TCGA.BATCH' %in% names(map))
     map$BATCH.ID = as.numeric(as.factor(map$TCGA.BATCH))
@@ -337,8 +344,8 @@ mageTab <- function(map, old.version='0', new.version='0', base=NULL, magetab.ve
   oldwd = getwd()
   setwd(archive.dir)
   addDescription(map, platform=platform)
-  buildIDF(map, version=new.version, magetab.version=magetab.version, platform=platform)
-  buildSDRF(map, old.version=old.version, new.version=new.version, magetab.version=magetab.version, platform=platform, revision=revision)
+  buildIDF(map, version=new.version, magetab.version=magetab.version, platform=platform, series=series)
+  buildSDRF(map, old.version=old.version, new.version=new.version, magetab.version=magetab.version, platform=platform, revision=revision, series=series)
   setwd(oldwd)
 } # }}} 
 
@@ -357,7 +364,7 @@ addDescription <- function(x, platform='HumanMethylation450') {
 				    unlist(lapply(sessionInfo()$otherPkgs, function(x){x$Version}), use.names=F), sep="-"), collapse=", "), sep=" : ")
 
   if(platform == 'HumanMethylation450') {
-    boilerplate = paste('This data archive contains the Cancer Genome Atlas (TCGA) analysis of DNA methylation profiling using the IIllumina Infinium',platform,'platform. The Infinium platform analyzes up to 482,421 CpG dinucleotides and 3091 CpH trinucleotides, spanning gene-associated elements as well as intergenic regions. DNA samples were received, bisulfite converted and cytosine methylation was evaluated using IIllumina Infinium',platform,'microarrays.')
+    boilerplate = paste('This data archive contains the Cancer Genome Atlas (TCGA) analysis of DNA methylation profiling using the IIllumina Infinium',platform,'platform. The Infinium platform analyzes up to 482,421 CpG dinucleotides and 3091 CpH dinucleotides, spanning gene-associated elements as well as intergenic regions. DNA samples were received, bisulfite converted and cytosine methylation was evaluated using IIllumina Infinium',platform,'microarrays.')
   } else { 
     boilerplate = paste('This data archive contains the Cancer Genome Atlas (TCGA) analysis of DNA methylation profiling using the IIllumina Infinium',platform,'platform. The Infinium platform analyzes up to 27598 CpG dinucleotides, primarily within 1500bp of putative gene transcription start sites.  DNA samples were received, bisulfite converted and cytosine methylation was evaluated using IIllumina Infinium',platform,'microarrays.')
   }

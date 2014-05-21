@@ -7,7 +7,7 @@ capwords <- function(s, strict = FALSE) {
      }
 
 # Utility function to aggreagate and clean up Dan's mappings before adding them to DANEUS
-processMap <- function(base=NULL, disease, platform='HumanMethylation450') {
+processMap <- function(base=NULL, disease, platform='HumanMethylation450', keep.UUID=FALSE) {
 	if(is.null(base)){
 		message("Assuming there is a directory called DaneusMappings in ~/Dropbox which contains Dan's mapping files")
 		base <- "~/Dropbox/DaneusMappings"
@@ -17,28 +17,36 @@ processMap <- function(base=NULL, disease, platform='HumanMethylation450') {
 	setwd(map.dir)
 	message("Canonicalizing Dan's mapping files assuming they have been standardized to expected input")
 	map <- mapBatches(list.files(pattern='.xls'))
-	setwd(base)
-	cat(map$TCGA.ID, file="barcodes.txt", sep="\n")
-	message("Grabbing UUIDs from the Biospecimen Metadata Browser and expecting getuuid.pl script to be present in base directory")
-	system("perl getuuid.pl barcodes.txt uuid.txt", ignore.stdout = TRUE)
-	setwd(map.dir)
-	uuid <- read.delim(file.path(base, "uuid.txt"), stringsAsFactors=F, header=F)[,2]
-	if(any(uuid %in% c("", " "))){
-		stop("There are missing UUIDs. Please check and remove the samples with missing UUIDs before proceeding")
+	if(!keep.UUID){
+		map$uuid <- NULL
+		setwd(base) 
+		cat(map$TCGA.ID, file="barcodes.txt", sep="\n")
+		message("Grabbing UUIDs from the Biospecimen Metadata Browser and expecting getuuid.pl script to be present in base directory")
+		system("perl getuuid.pl barcodes.txt uuid.txt", ignore.stdout = TRUE)
+		setwd(map.dir)
+		uuid <- read.delim(file.path(base, "uuid.txt"), stringsAsFactors=F, header=F)[,2]
+		if(any(uuid %in% c("", " "))){
+			stop("There are missing UUIDs. Please check and remove the samples with missing UUIDs before proceeding")
+		}
+		map$uuid <- uuid
+		setwd(base)
+		cat(map$uuid, file="uuids.txt", sep="\n")
+		message("Grabbing sample shipping date from the Biospecimen Metadata Browser and expecting getShip.pl script to be present in base directory")
+		system("perl getShip.pl uuids.txt shipped.txt", ignore.stdout = TRUE)
+		setwd(map.dir)
+		shipped <- read.delim(file.path(base, "shipped.txt"), stringsAsFactors=F, header=F)[,2]
+		shipped <- as.character(as.Date(shipped, format="%m/%d/%Y"))
+		if(any(shipped %in% c("", " "))){
+			stop("There are missing shipping dates. Please check and add missing shipping dates before proceeding")
+		}
+		map$shipped <- shipped
 	}
-	map$uuid <- uuid
-	setwd(base)
-	cat(map$uuid, file="uuids.txt", sep="\n")
-	message("Grabbing sample shipping date from the Biospecimen Metadata Browser and expecting getShip.pl script to be present in base directory")
-	system("perl getShip.pl uuids.txt shipped.txt", ignore.stdout = TRUE)
-	setwd(map.dir)
-	shipped <- read.delim(file.path(base, "shipped.txt"), stringsAsFactors=F, header=F)[,2]
-	shipped <- as.character(as.Date(shipped, format="%m/%d/%Y"))
-	if(any(shipped %in% c("", " "))){
-		stop("There are missing shipping dates. Please check and add missing shipping dates before proceeding")
+	map$uuid <- tolower(map$uuid)
+	if(keep.UUID){
+		map <- map[,-9]
+	} else {
+		map <- map[,-8]
 	}
-	map$shipped <- shipped
-	map <- map[,-8]
 	source <- lapply(strsplit(map$source, split=" "), function(x){x[c(2,4)]})
 	plate <- unlist(lapply(source, function(x){x[1]}), use.names=F)
 	well <- unlist(lapply(source, function(x){x[2]}), use.names=F)
@@ -72,6 +80,12 @@ processMap <- function(base=NULL, disease, platform='HumanMethylation450') {
 	hist <- gsub("nos", "NOS", hist, fixed=T)
 	hist <- gsub("lms", "LMS", hist, fixed=T)
 	hist <- gsub("ups", "UPS", hist, fixed=T)
+	hist <- gsub("mpnst", "MPNST", hist, fixed=T)
+	hist <- gsub("Mfh", "MFH", hist, fixed=T)
+	hist <- gsub("Pt2", "pT2", hist, fixed=T)
+	hist <- gsub("Pt1", "pT1", hist, fixed=T)
+	hist <- gsub("please", "Please", hist, fixed=T)
+	hist <- gsub("AdeNOSquamous", "Adenosquamous", hist, fixed=T)
 	map$histology <- hist
 	map$tissue <- tissue
 	map$diseaseabr <- disease
@@ -118,7 +132,7 @@ getClinical <- function(disease, outdir='.'){
 	setwd(oldwd)
 }
 
-getSNP6 <- function(disease, basedir='~/export/uec-gs1/laird/shared/research/bootwall/SNP6')
+getSNP6 <- function(disease, basedir='/export/uec-gs1/laird/shared/research/bootwall/SNP6')
 {
 	require(stringr)
 	disease <- tolower(disease)
@@ -159,6 +173,6 @@ getSNP6 <- function(disease, basedir='~/export/uec-gs1/laird/shared/research/boo
 		birdseedURL[[i]] <- paste0(names(birdseedFiles)[i], birdseedFiles[[i]], sep="")
 	}
 	birdseedURL <- unlist(birdseedURL, use.names=FALSE)
-	cmd.birdseed <- paste("wget -O", paste(diseasedir, unlist(birdseedFiles, use.names=F), sep="/"), birdseedURL, sep=" ")
+	cmd.birdseed <- paste("wget -O", paste(diseasedir, unlist(birdseedFiles, use.names=F), sep="/"), birdseedURL, "-a birdseed.log", sep=" ")
 	sapply(cmd.birdseed, system)
 }

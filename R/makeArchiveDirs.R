@@ -1,4 +1,4 @@
-makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, lvls=c('aux','Level_1','Level_2','Level_3','mage-tab'), platform='HumanMethylation450') 
+makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, lvls=c('aux','Level_1','Level_2','Level_3','mage-tab'), platform='HumanMethylation450', series='0') 
 { # {{{
 
   METHYLUMISET = FALSE
@@ -33,7 +33,11 @@ makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, l
   dirs$disease = paste(base, 'raw', disease, sep='/')
   dirs$mappings = paste(base, 'mappings.aux', sep='/')
   diseasestub = paste('jhu-usc.edu', disease, sep='_')
-  dirs$archive = pkged = paste(base, 'tcga', disease, paste("version", version, sep=""), sep='/')
+  if(series == '0'){
+	  dirs$archive = pkged = paste(base, 'tcga', disease, paste("version", version, sep=""), sep='/')
+  } else {
+	  dirs$archive = pkged = paste(base, 'tcga', disease, paste(series, '.', "version", version, sep=""), sep='/')
+  }
   if(!file.exists(dirs$archive)) dir.create(dirs$archive)
   setwd(dirs$disease)
   oldwd = getwd()
@@ -50,7 +54,7 @@ makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, l
     }
     dirs$aux = paste(pkged, 
                      paste(diseasestub, platform, 'aux', BID, 
-                           version, '0', sep='.'),  sep='/')
+                           version, series, sep='.'),  sep='/')
     oldwd = getwd()
     dir.create(dirs$aux)
     setwd(dirs$aux)
@@ -71,7 +75,7 @@ makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, l
       oldwd = getwd()
       dirs$level_1[i] = paste(pkged, 
                               paste(diseasestub, platform, 'Level_1', i,
-                                    version,'0', sep='.'), sep='/')
+                                    version, series, sep='.'), sep='/')
       dir.create(dirs$level_1[i])
       system(paste('touch ', dirs$level_1[i], '.tar.gz', sep=''))
     }
@@ -85,7 +89,7 @@ makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, l
       oldwd = getwd()
       dirs$level_2[i] = paste(pkged, 
                               paste(diseasestub, platform, 'Level_2', i,
-                                    version, '0', sep='.'), sep='/')
+                                    version, series, sep='.'), sep='/')
       dir.create(dirs$level_2[i])
       system(paste('touch ', dirs$level_2[i], '.tar.gz', sep=''))
     }
@@ -99,7 +103,7 @@ makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, l
       oldwd = getwd()
       dirs$level_3[i] = paste(pkged, 
                               paste(diseasestub, platform, 'Level_3', i, 
-                                    version, '0', sep='.'), sep='/')
+                                    version, series, sep='.'), sep='/')
       dir.create(dirs$level_3[i])
       system(paste('touch ', dirs$level_3[i], '.tar.gz', sep=''))
     }
@@ -115,7 +119,7 @@ makeArchiveDirs <- function(map, version='0', base=NULL, magetab.version=NULL, l
     }
     dirs$magetab = paste(pkged, 
                          paste(diseasestub, platform, 'mage-tab', BID, 
-                               magetab.version, '0', sep='.'), sep='/')
+                               magetab.version, series, sep='.'), sep='/')
     dir.create(dirs$magetab)
     system(paste('touch ', dirs$magetab, '.tar.gz', sep=''))
     lvls = lvls[-which(names(lvls)=='mage-tab')]

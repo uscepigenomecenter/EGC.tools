@@ -47,7 +47,7 @@ setClass("SDRF", contains=c("tcgaExtract","tcgaLevel1", "tcgaLevel2", "tcgaLevel
 			platform="character",
 			version="character"))
 
-SDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platform='HumanMethylation450', revision=FALSE){
+SDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platform='HumanMethylation450', revision=FALSE, series='0'){
 	if(is(x, 'MethyLumiSet')) {
 		stopifnot('barcode' %in% varLabels(x))
 		stopifnot('BATCH.ID' %in% varLabels(x))
@@ -74,7 +74,7 @@ SDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platf
 	}
 	domain = 'jhu-usc.edu'
 	prepreamble =  paste('jhu-usc.edu_',disease,'.',platform,sep='')
-	preamble =  paste(prepreamble,'1',magetab.version,'0',sep='.')
+	preamble =  paste(prepreamble,'1',magetab.version,series,sep='.')
 	# <Domain>_<TumorType>.<Platform>.<ArchiveSerialIndex>.sdrf.txt
 	sdrf.name = paste(preamble, 'sdrf','txt',sep='.') # all one big SDRF file
 	array.ref = paste('Illumina.com','PhysicalArrayDesign',platform, sep=':')
@@ -163,9 +163,9 @@ SDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platf
 	idat.file = paste(barcode, channel, sep='_')
 	batch = rep(x$BATCH.ID, each=2)
 	if(revision){
-		name.archive.l1 = paste(prepreamble,'Level_1',batch,old.version,'0',sep='.')
+		name.archive.l1 = paste(prepreamble,'Level_1',batch,old.version,series,sep='.')
 	} else{
-		name.archive.l1 = paste(prepreamble,'Level_1',batch,new.version,'0',sep='.')
+		name.archive.l1 = paste(prepreamble,'Level_1',batch,new.version,series,sep='.')
 	}
 	name.archive.l1 = as(name.archive.l1, "Rle")
 	data.type = Rle('DNA Methylation', length(subjects) * 2)
@@ -185,9 +185,9 @@ SDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platf
 	#name.norm = name
 	data.matrix.file.l2 = paste(prepreamble,batch,'lvl-2',name,'txt',sep='.')
 	if(revision){
-		name.archive.l2 = paste(prepreamble,'Level_2',batch,old.version,'0',sep='.')
+		name.archive.l2 = paste(prepreamble,'Level_2',batch,old.version,series,sep='.')
 	} else{
-		name.archive.l2 = paste(prepreamble,'Level_2',batch,new.version,'0',sep='.')
+		name.archive.l2 = paste(prepreamble,'Level_2',batch,new.version,series,sep='.')
 	}
 	name.archive.l2 = as(name.archive.l2, "Rle")
 	data.level.l2 = Rle('Level 2', length(subjects) * 2)
@@ -204,7 +204,7 @@ SDRF <- function(x, old.version='0', new.version='0', magetab.version='0', platf
 	protocol.mask = Rle(paste(domain,'within_bioassay_data_set_function',platform,'01',sep=':'), length(subjects) * 2)
 	#name.mask = name
 	data.matrix.file.l3 = paste(prepreamble,batch,'lvl-3',name,'txt',sep='.')
-	name.archive.l3 = paste(prepreamble,'Level_3',batch,new.version,'0',sep='.')
+	name.archive.l3 = paste(prepreamble,'Level_3',batch,new.version,series,sep='.')
 	name.archive.l3 = as(name.archive.l3, "Rle")
 	data.level.l3 = Rle('Level 3', length(subjects) * 2)
 	genome = Rle('HG19', length(subjects) * 2)

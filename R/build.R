@@ -136,7 +136,7 @@ runBatchByID <- function(map, batch.id,base=NULL,platform='HumanMethylation450')
 } # }}}
 
 ## write level 1/2/3 for a batch -- aux/mage-tab are still done with a full map
-writeBatch <- function(x,batch.id,old.version='0',version='0',base=NULL,parallel=F,lvls=c(1:3), revision=FALSE)
+writeBatch <- function(x,batch.id,old.version='0',version='0',base=NULL,parallel=F,lvls=c(1:3), revision=FALSE, series='0')
 { # {{{ assuming that the full map will be used for aux and mage-tab
 
   dirs = list()
@@ -160,7 +160,11 @@ writeBatch <- function(x,batch.id,old.version='0',version='0',base=NULL,parallel
   stopifnot('TCGA.ID' %in% varLabels(x))
   if(!identical(sampleNames(x), x$TCGA.ID)) sampleNames(x) <- x$TCGA.ID
   dirs$raw = paste(base, 'raw', disease, sep='/')
-  pkged = dirs$archive = paste(base, 'tcga', disease, paste("version", version, sep=""), sep='/')
+  if(series == '0'){
+	  pkged = dirs$archive = paste(base, 'tcga', disease, paste("version", version, sep=""), sep='/')
+  } else {
+	  pkged = dirs$archive = paste(base, 'tcga', disease, paste(series, '.', "version", version, sep=""), sep='/')
+  }
   message('Assuming symlinks $HOME/meth27k and $HOME/meth450k both exist...')
 
   if(platform == 'HumanMethylation27') { # {{{
@@ -173,7 +177,7 @@ writeBatch <- function(x,batch.id,old.version='0',version='0',base=NULL,parallel
 
   if(1 %in% lvls) { # {{{ level 1: IDAT files
     dirs$level_1 = paste(pkged,paste(diseasestub, platform, 'Level_1', batch.id,
-                                     version, '0', sep='.'), sep='/')
+                                     version, series, sep='.'), sep='/')
     stopifnot('TCGA.BATCH' %in% varLabels(x))
     message(paste('Creating directory', dirs$level_1, '...'))
     if(!file.exists(dirs$level_1)) dir.create(dirs$level_1)
@@ -206,7 +210,7 @@ writeBatch <- function(x,batch.id,old.version='0',version='0',base=NULL,parallel
 
   if(2 %in% lvls) { # {{{ level 2: background-corrected M and U intensities
     dirs$level_2 = paste(pkged,paste(diseasestub, platform, 'Level_2', batch.id,
-                                     version, '0', sep='.'), sep='/')
+                                     version, series, sep='.'), sep='/')
     stopifnot('TCGA.BATCH' %in% varLabels(x))
     message(paste('Creating directory', dirs$level_2, '...'))
     if(!file.exists(dirs$level_2)) dir.create(dirs$level_2)
@@ -255,7 +259,7 @@ writeBatch <- function(x,batch.id,old.version='0',version='0',base=NULL,parallel
 
   if(3 %in% lvls) { # {{{ level 3: masked beta values and p-values
     dirs$level_3 = paste(pkged,paste(diseasestub, platform, 'Level_3', batch.id,
-                                     version, '0', sep='.'), sep='/')
+                                     version, series, sep='.'), sep='/')
     message(paste('Creating directory', dirs$level_3, '...'))
     if(!file.exists(dirs$level_3)) dir.create(dirs$level_3)
     setwd(dirs$level_3)
@@ -328,7 +332,7 @@ writeBatch <- function(x,batch.id,old.version='0',version='0',base=NULL,parallel
 } # }}}
 
 ## build aux, level 1, and mage-tab across all batches; levels 2 & 3 by batch
-buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform='HumanMethylation450', magetab.version=NULL, write.magetab=TRUE, lvls=c(1:3), revision=FALSE)
+buildArchive <- function(map, old.version='0', new.version='0', base=NULL,platform='HumanMethylation450', magetab.version=NULL, write.magetab=TRUE, lvls=c(1:3), revision=FALSE, series='0')
 { # {{{
   METHYLUMISET = FALSE
   if(is(map, 'MethyLumiSet')) { # {{{ METHYLUMISET = TRUE
@@ -360,12 +364,12 @@ buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform
   if(3 %in% lvls) lvl = c(lvl, "Level_3")
   #if(all(c(1:3) %in% lvls)) lvl = c("aux" , lvl)
   message('Creating archive directories...')
-  dirs = makeArchiveDirs(map, version=new.version, base=base, magetab.version, lvls=lvl, platform=platform)
+  dirs = makeArchiveDirs(map, version=new.version, base=base, magetab.version, lvls=lvl, platform=platform, series=series)
   writeTidyHistory(x, filepath=dirs$aux)
   message('Writing level 2 and level 3 data...')
   if(METHYLUMISET==TRUE) {
     for(b in bs) {
-      writeBatch(x, b, old.version=old.version, version=new.version, lvls=lvls, revision=revision)
+      writeBatch(x, b, old.version=old.version, version=new.version, lvls=lvls, revision=revision, series=series)
     }
   } else {
     for(b in bs) {
@@ -374,7 +378,7 @@ buildArchive<-function(map, old.version='0', new.version='0', base=NULL,platform
   }
   if(write.magetab){
     message('Writing mage-tab IDF and SDRF files...')
-    mageTab(map, old.version=old.version, new.version=new.version, base=base, magetab.version=magetab.version, platform=platform, lvls=lvls, revision=revision)
+    mageTab(map, old.version=old.version, new.version=new.version, base=base, magetab.version=magetab.version, platform=platform, lvls=lvls, revision=revision, series=series)
   }
   #message('Packaging and signing each directory...')
   #packageAndSign(x, base=base, version=new.version, platform=platform) 
@@ -414,7 +418,7 @@ justSign <- function(map, base=NULL, version='0', platform='HumanMethylation450'
 } # }}}
 
 ## Adds MD5sums and tarballs for all of the archive directories for a tumor. 
-packageAndSign <- function(map, base=NULL, version='0', platform='HumanMethylation450', revision=FALSE) 
+packageAndSign <- function(map, base=NULL, version='0', platform='HumanMethylation450', revision=FALSE, series='0') 
 { # {{{
   oldwd = getwd()
   disease = unique(map$diseaseabr)
@@ -428,7 +432,11 @@ packageAndSign <- function(map, base=NULL, version='0', platform='HumanMethylati
     }
   } # }}}
 
-  dir.base = paste(base, 'tcga', disease, paste("version", version, sep=""), sep='/')
+  if(series == '0'){
+	  dir.base = paste(base, 'tcga', disease, paste("version", version, sep=""), sep='/')
+  } else {
+	  dir.base = paste(base, 'tcga', disease, paste(series,'.',"version", version, sep=""), sep='/')
+  }
   setwd(dir.base)
   dir.patt = paste('^./jhu-usc.edu_',disease,'.',platform,sep='')
   dirs = grep(dir.patt, list.dirs(), value=TRUE)
@@ -482,7 +490,7 @@ validateArchive <- function(map,base=NULL, version='0', platform='HumanMethylati
 
 ## Wrapper function that makes building an archive basically a one liner
 packageArchive <- function(map, disease=NULL, base=NULL, old.version='0', new.version='0', platform='HumanMethylation450',
-			   magetab.version=NULL, write.magetab=TRUE, lvls=c(1:3), revision=FALSE)
+			   magetab.version=NULL, write.magetab=TRUE, lvls=c(1:3), revision=FALSE, series='0')
 {
 	if(is.null(disease)){
 		stop("Please provide the tumor name for which the archive is to be built")
@@ -498,9 +506,11 @@ packageArchive <- function(map, disease=NULL, base=NULL, old.version='0', new.ve
 	message(paste("Reading idats for", disease, sep=" "))
 		
 	TUMOR <- methylumIDAT(map, parallel=T)
-	
+
+	message("Checking probe ordering")
 	data(probe.ordering)
 	if(!identical(featureNames(TUMOR), probe.ordering)){
+		message("Reordering probes as per Broad's request")
                 TUMOR <- TUMOR[match(probe.ordering, featureNames(TUMOR)), ]
         }
         stopifnot(identical(featureNames(TUMOR), probe.ordering))
@@ -512,7 +522,7 @@ packageArchive <- function(map, disease=NULL, base=NULL, old.version='0', new.ve
 	if(!is.null(failed)){
 		TUMOR <- TUMOR[, -failed]
 	}
-	raw <- paste(msetdir, paste(disease, "raw", "rda", sep="."), sep="/")
+	raw <- ifelse(series == '0', paste(msetdir, paste(disease, "raw", "rda", sep="."), sep="/"), paste(msetdir, paste(disease, series, "raw", "rda", sep="."), sep="/"))
 	save(TUMOR, file = raw)
 	gc()
 
@@ -524,7 +534,7 @@ packageArchive <- function(map, disease=NULL, base=NULL, old.version='0', new.ve
 	message("Performing Dye-Bias Equalization")
 	
 	TUMOR <- normalizeMethyLumiSet(TUMOR)
-	mset <- paste(msetdir, paste(disease, "rda", sep="."), sep="/")
+	mset <- ifelse(series == '0', paste(msetdir, paste(disease, "rda", sep="."), sep="/"), paste(msetdir, paste(disease, series, "rda", sep="."), sep="/"))
 	save(TUMOR, file=mset)
 	gc()
 
@@ -545,10 +555,14 @@ packageArchive <- function(map, disease=NULL, base=NULL, old.version='0', new.ve
 	message("Generating Density Plot of Cell Line Control Beta Values")
 	
 	controls <- which(TUMOR$histology %in% c("Cell Control Line", "Cytogenetically Normal", "Cell Line Control"))
-	png(file.path(tumordir, paste(disease, "cell", "line", "controls", "png", sep=".")))
-	print(plotDensities(TUMOR, controls = controls, label = "Cell Line Controls Beta"))
-	dev.off()
-	gc()
+	if(length(controls) != 0){
+		png(file.path(tumordir, paste(disease, "cell", "line", "controls", "png", sep=".")))
+		print(plotDensities(TUMOR, controls = controls, label = "Cell Line Controls Beta"))
+		dev.off()
+		gc()
+	} else {
+		message("No cell line controls were found")
+	}
 
 	message("Writing out failure rate for Samples and Probes")
 	
@@ -559,12 +573,12 @@ packageArchive <- function(map, disease=NULL, base=NULL, old.version='0', new.ve
 	message("Building Level 1, 2, 3, aux and magetab Archives")
 	
 	buildArchive(TUMOR, base = base, old.version = old.version, new.version = new.version, platform = platform,
-		     magetab.version = magetab.version, write.magetab = write.magetab, lvls = lvls, revision = revision)
+		     magetab.version = magetab.version, write.magetab = write.magetab, lvls = lvls, revision = revision, series=series)
 	gc()
 
 	message("Packaging archives into tarballs and generating MD5 sums")
 	
-	packageAndSign(TUMOR, base = base, version = new.version, platform = platform, revision = revision)
+	packageAndSign(TUMOR, base = base, version = new.version, platform = platform, revision = revision, series = series)
 
 	setwd(oldwd)
 }
