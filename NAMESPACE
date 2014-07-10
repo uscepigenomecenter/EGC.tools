@@ -1,7 +1,7 @@
 import(methods)
 import(methylumi)
 import(matrixStats)
-import(RMySQL)
+#import(RMySQL)
 
 export(loadMap, mapBatches, getManifestFromDCC, runBatchByName, runBatchByID, writeBatch, buildArchive, justSign, packageAndSign, validateArchive, packageArchive, getDisease, insertDisease, mapDisease, getTissue, insertTissue, mapTissue, getHistology, insertHistology, mapHistology, getBatch, insertBatch, mapBatch, getStatus, getPlatform, getProject, insertSample, buildIDF, buildSDRF, addDescription, mageTab, loadOneOff, runOneOff, canonicalizeExcelFile, canonicalizeMapping, checkSampleLabels, checkDirs, verifyDataDirs, linkRawData, makeArchiveDirs, getTidyHistory, writeTidyHistory, capwords, processMap, runSanityChecks, getSampleSummary, writeSampleSummary, getProbeSummary, writeProbeSummary, plotSampleSummary, plotDensities, runSampleQC)
 
